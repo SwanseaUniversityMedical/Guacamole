@@ -1,0 +1,130 @@
+{{- if .Values.initdb.enabled }}
+{{- $podNodeSelector := include "guacamole.podNodeSelector" (dict "Release" .Release "Values" .Values "nodeSelector" .Values.initdb.nodeSelector) }}
+{{- $podAffinity := include "guacamole.podAffinity" (dict "Release" .Release "Values" .Values "affinity" .Values.initdb.affinity) }}
+{{- $podTolerations := include "guacamole.podTolerations" (dict "Release" .Release "Values" .Values "tolerations" .Values.initdb.tolerations) }}
+{{- $podSecurityContext := include "guacamole.podSecurityContext" (dict "Release" .Release "Values" .Values "securityContext" .Values.initdb.securityContext) }}
+{{- $volumeMounts := include "guacamole.volumeMounts" (dict "Release" .Release "Values" .Values "extraVolumeMounts" .Values.initdb.extraVolumeMounts) }}
+{{- $volumes := include "guacamole.volumes" (dict "Release" .Release "Values" .Values "extraVolumes" .Values.initdb.extraVolumes) }}
+{{- $env := include "guacamole.env" (dict "Release" .Release "Values" .Values "extraEnv" .Values.initdb.extraEnv) }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "guacamole.fullname" . }}-initdb
+  
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "0"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded,hook-failed
+    {{- if .Values.initdb.annotations }}
+    {{- toYaml .Values.initdb.annotations | nindent 4 }}
+    {{- end }}
+
+  labels:
+    app: {{ include "guacamole.labels.app" . }}
+    component: initdb
+    chart: {{ include "guacamole.labels.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    {{- if .Values.initdb.labels }}
+    {{- toYaml .Values.initdb.labels | nindent 4 }}
+    {{- end }}
+
+spec:
+  template:
+    metadata:
+
+      {{- if .Values.initdb.podAnnotations }}
+      annotations:
+        {{- toYaml .Values.initdb.podAnnotations | nindent 8 }}
+      {{- end }}
+
+      labels:
+        app: {{ include "guacamole.labels.app" . }}
+        component: initdb
+        release: {{ .Release.Name }}
+        {{- if .Values.initdb.podLabels }}
+        {{- toYaml .Values.initdb.podLabels | nindent 8 }}
+        {{- end }}
+
+    spec:
+      restartPolicy: OnFailure
+
+      {{- if .Values.initdb.image.pullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.initdb.image.pullSecret }}
+      {{- end }}
+
+      {{- if $podNodeSelector | fromYaml }}
+      nodeSelector:
+        {{- $podNodeSelector | nindent 8 }}
+      {{- end }}
+
+      {{- if $podAffinity | fromYaml }}
+      affinity:
+        {{- $podAffinity | nindent 8 }}
+      {{- end }}
+
+      {{- if ne $podTolerations "[]"  }}
+      tolerations:
+        {{- $podTolerations | nindent 8 }}
+      {{- end }}
+
+      {{- if $podSecurityContext | fromYaml }}
+      securityContext:
+        {{- $podSecurityContext | nindent 8 }}
+      {{- end }}
+
+      {{- if $volumes }}
+      volumes:
+        {{- $volumes | indent 8 }}
+      {{- end }}
+
+      containers:
+        - name: initdb
+          {{- include "guacamole.image" (dict "image" .Values.initdb.image) | indent 10 }}
+
+          {{- if $volumeMounts }}
+          volumeMounts:
+            {{- $volumeMounts | indent 12 }}
+          {{- end }}
+
+          env:
+            {{- if .Values.database.enabled }}
+            - name: INITDB_POSTGRES_HOSTNAME
+              value: {{ include "guacamole.database.service" . }}
+            - name: INITDB_POSTGRES_PORT
+              value: "{{ .Values.database.port }}"
+            - name: INITDB_POSTGRES_DATABASE
+              value: "{{ .Values.database.database }}"
+            - name: INITDB_POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "guacamole.database.secret" . }}
+                  key: username
+            - name: INITDB_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "guacamole.database.secret" . }}
+                  key: password
+            {{- end }}
+
+            - name: INITDB_GUACAMOLE_CONTROLLER_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "guacamole.controller.secret" . }}
+                  key: username
+            - name: INITDB_GUACAMOLE_CONTROLLER_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "guacamole.controller.secret" . }}
+                  key: password
+
+            {{- if $env }}
+            {{- $env | indent 12 }}
+            {{- end }}
+
+          {{- if .Values.initdb.resources }}
+          resources:
+            {{- toYaml .Values.initdb.resources | nindent 12 }}
+          {{- end }}
+{{- end }}

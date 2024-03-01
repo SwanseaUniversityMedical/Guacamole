@@ -1,0 +1,174 @@
+{{- if .Values.web.enabled }}
+{{- $podNodeSelector := include "guacamole.podNodeSelector" (dict "Release" .Release "Values" .Values "nodeSelector" .Values.web.nodeSelector) }}
+{{- $podAffinity := include "guacamole.podAffinity" (dict "Release" .Release "Values" .Values "affinity" .Values.web.affinity) }}
+{{- $podTolerations := include "guacamole.podTolerations" (dict "Release" .Release "Values" .Values "tolerations" .Values.web.tolerations) }}
+{{- $podSecurityContext := include "guacamole.podSecurityContext" (dict "Release" .Release "Values" .Values "securityContext" .Values.web.securityContext) }}
+{{- $volumeMounts := include "guacamole.volumeMounts" (dict "Release" .Release "Values" .Values "extraVolumeMounts" .Values.web.extraVolumeMounts) }}
+{{- $volumes := include "guacamole.volumes" (dict "Release" .Release "Values" .Values "extraVolumes" .Values.web.extraVolumes) }}
+{{- $env := include "guacamole.env" (dict "Release" .Release "Values" .Values "extraEnv" .Values.web.extraEnv) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "guacamole.fullname" . }}-web
+
+  {{- if .Values.web.annotations }}
+  annotations:
+    {{- toYaml .Values.web.annotations | nindent 4 }}
+  {{- end }}
+
+  labels:
+    app: {{ include "guacamole.labels.app" . }}
+    component: web
+    chart: {{ include "guacamole.labels.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    {{- if .Values.web.labels }}
+    {{- toYaml .Values.web.labels | nindent 4 }}
+    {{- end }}
+
+spec:
+  replicas: {{ .Values.web.replicas }}
+
+  selector:
+    matchLabels:
+      app: {{ include "guacamole.labels.app" . }}
+      component: web
+      release: {{ .Release.Name }}
+
+  template:
+    metadata:
+
+      {{- if .Values.web.podAnnotations }}
+      annotations:
+        {{- toYaml .Values.web.podAnnotations | nindent 8 }}
+      {{- end }}
+
+      labels:
+        app: {{ include "guacamole.labels.app" . }}
+        component: web
+        release: {{ .Release.Name }}
+        {{- if .Values.web.podLabels }}
+        {{- toYaml .Values.web.podLabels | nindent 8 }}
+        {{- end }}
+
+    spec:
+      restartPolicy: Always
+
+      {{- if .Values.web.image.pullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.web.image.pullSecret }}
+      {{- end }}
+
+      {{- if $podNodeSelector | fromYaml }}
+      nodeSelector:
+        {{- $podNodeSelector | nindent 8 }}
+      {{- end }}
+
+      {{- if $podAffinity | fromYaml }}
+      affinity:
+        {{- $podAffinity | nindent 8 }}
+      {{- end }}
+
+      {{- if ne $podTolerations "[]" }}
+      tolerations:
+        {{- $podTolerations | nindent 8 }}
+      {{- end }}
+
+      {{- if $podSecurityContext | fromYaml }}
+      securityContext:
+        {{- $podSecurityContext | nindent 8 }}
+      {{- end }}
+
+      {{- if $volumes }}
+      volumes:
+        {{- $volumes | indent 8 }}
+      {{- end }}
+
+      containers:
+        - name: web
+          {{- include "guacamole.image" (dict "image" .Values.web.image) | indent 10 }}
+
+          {{- if $volumeMounts }}
+          volumeMounts:
+            {{- $volumeMounts | indent 12 }}
+          {{- end }}
+
+          env:
+            - name: WEBAPP_CONTEXT
+              value: ROOT
+            - name: GUACD_HOSTNAME
+              value: {{ include "guacamole.guacd.service" . }}
+            - name: GUACD_PORT
+              value: "{{ .Values.guacd.port }}"
+
+            {{- if .Values.database.enabled }}
+            - name: POSTGRES_HOSTNAME
+              value: {{ include "guacamole.database.service" . }}
+            - name: POSTGRES_PORT
+              value: "{{ .Values.database.port }}"
+            - name: POSTGRES_DATABASE
+              value: "{{ .Values.database.database }}"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "guacamole.database.secret" . }}
+                  key: username
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "guacamole.database.secret" . }}
+                  key: password
+            {{- end }}
+
+            - name: LDAP_HOSTNAME
+              value: {{ .Values.ldap.hostname }}
+            - name: LDAP_PORT
+              value: {{ .Values.ldap.port }}
+
+            - name: LDAP_USER_BASE_DN
+              value: {{ .Values.ldap.userBaseDn }}
+            - name: LDAP_GROUP_BASE_DN
+              value: {{ .Values.ldap.groupBaseDn }}
+
+            - name: LDAP_USERNAME_ATTRIBUTE
+              value: {{ .Values.ldap.usernameAttribute }}
+            - name: LDAP_MEMBER_ATTRIBUTE
+              value: {{ .Values.ldap.memberAttribute }}
+            - name: LDAP_USER_SEARCH_FILTER
+              value: {{ .Values.ldap.searchFilter }}
+            - name: LDAP_SEARCH_BIND_DN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "guacamole.ldap.secret" . }}
+                  key: username
+            - name: LDAP_SEARCH_BIND_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "guacamole.ldap.secret" . }}
+                  key: password
+
+            {{- if $env }}
+            {{- $env | indent 12 }}
+            {{- end }}
+
+          ports:
+            - name: web
+              containerPort: {{ .Values.web.port }}
+
+          readinessProbe:
+            tcpSocket:
+              port: {{ .Values.web.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+
+          livenessProbe:
+            tcpSocket:
+              port: {{ .Values.web.port }}
+            initialDelaySeconds: 15
+            periodSeconds: 20
+
+          {{- if .Values.web.resources }}
+          resources:
+            {{- toYaml .Values.web.resources | nindent 12 }}
+          {{- end }}
+{{- end }}

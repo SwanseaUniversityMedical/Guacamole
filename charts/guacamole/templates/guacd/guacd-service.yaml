@@ -1,0 +1,24 @@
+{{- if .Values.guacd.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "guacamole.fullname" . }}-guacd
+
+  labels:
+    app: {{ include "guacamole.labels.app" . }}
+    component: guacd
+    chart: {{ include "guacamole.labels.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+
+spec:
+  selector:
+    app: {{ include "guacamole.labels.app" . }}
+    component: guacd
+    release: {{ .Release.Name }}
+
+  ports:
+  - name: guacd
+    port: {{ .Values.guacd.port }}
+    protocol: TCP
+{{- end }}
