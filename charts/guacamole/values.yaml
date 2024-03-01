@@ -151,36 +151,6 @@ ingress:
     secretName:
 
 ################################################################################
-initdb:
-  enabled: true
-
-  image:
-    repository: harbor.ukserp.ac.uk/guacamole/initdb
-    tag: 1.0.0
-    pullPolicy: IfNotPresent
-    pullSecret: ""
-    uid: 1001
-    gid: 0
-
-  resources: {}
-
-  nodeSelector: {}
-  affinity: {}
-  tolerations: []
-
-  securityContext: {}
-
-  labels: {}
-  podLabels: {}
-
-  annotations: {}
-  podAnnotations: {}
-
-  extraEnv: []
-  extraVolumeMounts: []
-  extraVolumes: []
-
-################################################################################
 database:
   enabled: true
 

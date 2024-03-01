@@ -6,7 +6,7 @@ from sqlalchemy import text
 from sqlalchemy.engine import Connection
 
 
-def create_user(
+def db_create_service_user(
         database: Connection,
         username: str,
         password: str

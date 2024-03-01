@@ -94,11 +94,27 @@ spec:
           {{- end }}
 
           env:
-            - name: CONTROLLER_GUACAMOLE_HOSTNAME
-              value: {{ include "guacamole.web.service" . }}
-            - name: CONTROLLER_GUACAMOLE_PORT
-              value: "{{ .Values.web.port }}"
+            - name: CONTROLLER_POSTGRES_HOSTNAME
+              value: {{ include "guacamole.database.service" . | quote }}
+            - name: CONTROLLER_POSTGRES_PORT
+              value: {{ .Values.database.port | quote }}
+            - name: CONTROLLER_POSTGRES_DATABASE
+              value: {{ .Values.database.database | quote }}
+            - name: CONTROLLER_POSTGRES_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "guacamole.database.secret" . }}
+                  key: username
+            - name: CONTROLLER_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "guacamole.database.secret" . }}
+                  key: password
 
+            - name: CONTROLLER_GUACAMOLE_HOSTNAME
+              value: {{ include "guacamole.web.service" . | quote }}
+            - name: CONTROLLER_GUACAMOLE_PORT
+              value: {{ .Values.web.port | quote }}
             - name: CONTROLLER_GUACAMOLE_USERNAME
               valueFrom:
                 secretKeyRef:
@@ -108,6 +124,31 @@ spec:
               valueFrom:
                 secretKeyRef:
                   name: {{ include "guacamole.controller.secret" . }}
+                  key: password
+
+            - name: CONTROLLER_LDAP_HOSTNAME
+              value: {{ .Values.ldap.hostname | quote }}
+            - name: CONTROLLER_LDAP_PORT
+              value: {{ .Values.ldap.port | quote }}
+            - name: CONTROLLER_LDAP_USER_BASE_DN
+              value: {{ .Values.ldap.userBaseDn | quote }}
+            - name: CONTROLLER_LDAP_GROUP_BASE_DN
+              value: {{ .Values.ldap.groupBaseDn | quote }}
+            - name: CONTROLLER_LDAP_USERNAME_ATTRIBUTE
+              value: {{ .Values.ldap.usernameAttribute | quote }}
+            - name: CONTROLLER_LDAP_MEMBER_ATTRIBUTE
+              value: {{ .Values.ldap.memberAttribute | quote }}
+            - name: CONTROLLER_LDAP_USER_SEARCH_FILTER
+              value: {{ .Values.ldap.searchFilter | quote }}
+            - name: CONTROLLER_LDAP_SEARCH_BIND_DN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "guacamole.ldap.secret" . }}
+                  key: username
+            - name: CONTROLLER_LDAP_SEARCH_BIND_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "guacamole.ldap.secret" . }}
                   key: password
 
             {{- if $env }}

@@ -14,5 +14,5 @@ RUN apk update && \
 
 COPY src/ /opt/
 
-ENTRYPOINT ["python3", "/opt/initdb.py"]
+ENTRYPOINT ["python3", "/opt/controller.py"]
 #CMD ["--help"]
