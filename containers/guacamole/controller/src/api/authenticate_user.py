@@ -3,6 +3,8 @@ import logging
 
 import requests
 
+from ..utils import build_url
+
 
 def api_authenticate_user(
     hostname: str,
@@ -13,7 +15,11 @@ def api_authenticate_user(
 
     logging.info("authenticating user")
     response = requests.post(
-        f"http://{hostname}:{port}/api/tokens",
+        build_url(
+            scheme="http",
+            netloc=f"{hostname}:{port}",
+            path="/api/tokens"
+        ),
         data=dict(
             username=username,
             password=password
