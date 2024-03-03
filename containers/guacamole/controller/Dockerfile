@@ -1,15 +1,14 @@
-FROM alpine:3.19 as base
+FROM alpine:3.19
 
 COPY src/requirements.txt /opt/requirements.txt
 
 RUN apk update && \
-    apk add --update --no-cache python3 py3-pip && \
+    apk add --update --no-cache python3 py3-pip gcc musl-dev python3-dev openldap-dev && \
     pip install --break-system-packages pyclean --no-cache-dir && \
-    pip install --break-system-packages -r /opt/requirements.txt --no-cache-dir && \
+    pip install --break-system-packages -r /opt/requirements.txt && \
     pyclean -v /usr && \
     pyclean -v ~/ && \
     pip uninstall --break-system-packages -y pyclean && \
-    apk del py3-pip && \
     rm -rf /var/cache/apk/*
 
 COPY src/ /opt/

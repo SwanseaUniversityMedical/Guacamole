@@ -1,5 +1,6 @@
 import logging
 import click
+import ldap
 
 from database import (
     db_connection,
@@ -8,6 +9,11 @@ from database import (
 
 from api import (
     api_authenticate_user
+)
+
+from directory import (
+    ldap_authenticate_user,
+    ldap_iter_search
 )
 
 
@@ -22,14 +28,14 @@ logging.basicConfig(
     "--postgres-hostname",
     type=str,
     required=True,
-    help="Url to the postgres database.",
+    help="Url to the postgres client.",
     show_default=True
 )
 @click.option(
     "--postgres-port",
-    type=str,
+    type=int,
     required=True,
-    help="Port for the postgres database.",
+    help="Port for the postgres client.",
     show_default=True
 )
 @click.option(
@@ -43,14 +49,14 @@ logging.basicConfig(
     "--postgres-username",
     type=str,
     required=True,
-    help="Auth username for the postgres database.",
+    help="Auth username for the postgres client.",
     show_default=True
 )
 @click.option(
     "--postgres-password",
     type=str,
     required=True,
-    help="Auth password for the postgres database.",
+    help="Auth password for the postgres client.",
     show_default=True
 )
 @click.option(
@@ -166,18 +172,18 @@ def main(
 ):
     logging.info(f"running {__file__}")
 
-    logging.info("connect to database")
+    logging.info("connect to client")
     with db_connection(
         hostname=postgres_hostname,
         port=postgres_port,
         database=postgres_database,
         username=postgres_username,
         password=postgres_password
-    ).begin() as database:
+    ).begin() as database_client:
 
-        logging.info("create service user in database")
+        logging.info("create service user in client")
         db_create_service_user(
-            database=database,
+            client=database_client,
             username=guacamole_username,
             password=guacamole_password
         )
@@ -190,6 +196,24 @@ def main(
         password=guacamole_password
     )
     logging.debug(f"{token=}")
+
+    ldap_client = ldap_authenticate_user(
+        hostname=ldap_hostname,
+        port=ldap_port,
+        username=ldap_search_bind_dn,
+        password=ldap_search_bind_password
+    )
+    logging.debug(f"{ldap_client=}")
+
+    for record in ldap_iter_search(
+        client=ldap_client,
+        base=ldap_user_base_dn,
+        scope=ldap.SCOPE_SUBTREE,
+        filterstr=ldap_user_search_filter,
+        attrlist=[ldap_username_attribute],
+        page_size=10
+    ):
+        logging.debug(f"{record=}")
 
     logging.info("halting")
 

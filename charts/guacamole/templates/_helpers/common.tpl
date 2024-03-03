@@ -33,28 +33,28 @@ Construct the service name for the web endpoint.
 {{- end -}}
 
 {{/*
-Construct the service name for the database endpoint.
+Construct the service name for the client endpoint.
 */}}
 {{- define "guacamole.database.service" -}}
 {{ include "guacamole.fullname" . }}-database-rw.{{ .Release.Namespace }}.svc.cluster.local
 {{- end -}}
 
 {{/*
-Construct the configmap name for the database schema script.
+Construct the configmap name for the client schema script.
 */}}
 {{- define "guacamole.initdb.configmap" -}}
 {{ include "guacamole.fullname" . }}-database-initdb
 {{- end -}}
 
 {{/*
-Construct the secret name for the database endpoint.
+Construct the secret name for the client endpoint.
 */}}
 {{- define "guacamole.database.secret" -}}
-{{ .Values.database.secret | default (printf "%s-database-auth" (include "guacamole.fullname" .)) }}
+{{ .Values.database.secret | default (printf "%s-client-auth" (include "guacamole.fullname" .)) }}
 {{- end -}}
 
 {{/*
-Construct the secret name for the database endpoint.
+Construct the secret name for the client endpoint.
 */}}
 {{- define "guacamole.ldap.secret" -}}
 {{ .Values.ldap.secret | default (printf "%s-ldap-auth" (include "guacamole.fullname" .)) }}

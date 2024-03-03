@@ -7,21 +7,21 @@ from sqlalchemy.engine import Connection
 
 
 def db_create_service_user(
-        database: Connection,
+        client: Connection,
         username: str,
         password: str
     ):
 
-    logging.info(f"{username=}")
+    logging.debug(f"{username=}")
 
     salt = secrets.token_hex(32).upper()
-    logging.info(f"{salt=}")
+    logging.debug(f"{salt=}")
 
     password_hash = sha256(password.encode() + salt.encode()).hexdigest().upper()
-    logging.info(f"{password_hash=}")
+    logging.debug(f"{password_hash=}")
 
     logging.info("creating user entity")
-    database.execute(
+    client.execute(
         text(
             "INSERT INTO guacamole_entity (name, type) "
             "VALUES (:username, 'USER') "
@@ -33,7 +33,7 @@ def db_create_service_user(
     )
 
     logging.info("creating user authentication")
-    database.execute(
+    client.execute(
         text(
             "INSERT INTO guacamole_user (entity_id, password_hash, password_salt, password_date) "
             "SELECT "
@@ -55,7 +55,7 @@ def db_create_service_user(
     )
 
     logging.info("assigning user permissions")
-    database.execute(
+    client.execute(
         text(
             "INSERT INTO guacamole_system_permission (entity_id, permission) "
             "SELECT entity_id, permission::guacamole_system_permission_type "

@@ -6,7 +6,7 @@ from sqlalchemy.engine import Engine, URL
 
 def db_connection(
     hostname: str,
-    port: str,
+    port: int,
     database: str,
     username: str,
     password: str
@@ -19,7 +19,7 @@ def db_connection(
         host=hostname,
         port=port,
         database=database,
-        query={}
+        query=dict()
     )
     logging.debug(f"{url=}")
     return sqlalchemy.create_engine(url)
