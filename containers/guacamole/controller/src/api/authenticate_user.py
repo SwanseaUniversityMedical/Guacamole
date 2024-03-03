@@ -6,7 +6,7 @@ import requests
 
 def api_authenticate_user(
     hostname: str,
-    port: str,
+    port: int,
     username: str,
     password: str
 ) -> str:

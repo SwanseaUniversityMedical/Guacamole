@@ -68,7 +68,7 @@ logging.basicConfig(
 )
 @click.option(
     "--guacamole-port",
-    type=str,
+    type=int,
     required=True,
     help="Port for the guacamole api.",
     show_default=True
@@ -96,7 +96,7 @@ logging.basicConfig(
 )
 @click.option(
     "--ldap-port",
-    type=str,
+    type=int,
     required=True,
     help="Port for the ldap server.",
     show_default=True
@@ -152,16 +152,16 @@ logging.basicConfig(
 )
 def main(
     postgres_hostname: str,
-    postgres_port: str,
+    postgres_port: int,
     postgres_database: str,
     postgres_username: str,
     postgres_password: str,
     guacamole_hostname: str,
-    guacamole_port: str,
+    guacamole_port: int,
     guacamole_username: str,
     guacamole_password: str,
     ldap_hostname: str,
-    ldap_port: str,
+    ldap_port: int,
     ldap_user_base_dn: str,
     ldap_group_base_dn: str,
     ldap_username_attribute: str,
