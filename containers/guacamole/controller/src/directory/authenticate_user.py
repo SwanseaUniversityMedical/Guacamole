@@ -2,6 +2,8 @@ import logging
 import ldap
 from ldap.ldapobject import SimpleLDAPObject
 
+from ..utils import build_url
+
 
 def ldap_authenticate_user(
     hostname: str,
@@ -10,8 +12,15 @@ def ldap_authenticate_user(
     password: str
 ) -> SimpleLDAPObject:
 
-    logging.info("authenticating user")
-    client = ldap.initialize(f"ldap://{hostname}:{port}")
+    logging.info("connecting to ldap server")
+    client = ldap.initialize(
+        build_url(
+            scheme="ldap",
+            netloc=f"{hostname}:{port}"
+        )
+    )
+
+    logging.info("binding user")
     result = client.bind_s(
         who=username,
         cred=password

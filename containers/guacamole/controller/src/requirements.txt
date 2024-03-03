@@ -3,3 +3,4 @@ SQLAlchemy==2.0.27
 psycopg2-binary==2.9.9
 requests==2.31.0
 python-ldap==3.4.4
+ldap-filter==0.2.2
