@@ -1,31 +1,20 @@
 import logging
-import ldap
-from ldap.ldapobject import SimpleLDAPObject
-
-from ..utils import build_url
+from ldap3 import ALL, Connection, Server
 
 
 def ldap_authenticate_user(
     hostname: str,
-    port: str,
+    port: int,
     username: str,
     password: str
-) -> SimpleLDAPObject:
+) -> Connection:
 
     logging.info("connecting to ldap server")
-    client = ldap.initialize(
-        build_url(
-            scheme="ldap",
-            netloc=f"{hostname}:{port}"
-        )
-    )
+    server = Server(host=hostname, port=port, use_ssl=True, get_info=ALL)
 
     logging.info("binding user")
-    result = client.bind_s(
-        who=username,
-        cred=password
-    )
-    logging.debug(f"{result=}")
+    client = Connection(server, user=username, password=password, auto_bind=True)
+    client.start_tls()
 
     return client
 

@@ -3,7 +3,7 @@ import logging
 
 import requests
 
-from ..utils import build_url
+from .build_url import build_url
 
 
 def api_authenticate_user(

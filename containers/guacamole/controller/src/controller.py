@@ -1,6 +1,7 @@
 import logging
+import time
+
 import click
-import ldap
 
 from database import (
     db_connection,
@@ -13,7 +14,7 @@ from api import (
 
 from directory import (
     ldap_authenticate_user,
-    ldap_iter_search
+    ldap_iter_group_members
 )
 
 
@@ -137,6 +138,13 @@ logging.basicConfig(
     show_default=True
 )
 @click.option(
+    "--ldap-group-search-filter",
+    type=str,
+    required=True,
+    help="LDAP search filter for group records.",
+    show_default=True
+)
+@click.option(
     "--ldap-search-bind-dn",
     type=str,
     required=True,
@@ -148,6 +156,13 @@ logging.basicConfig(
     type=str,
     required=True,
     help="LDAP password for searching.",
+    show_default=True
+)
+@click.option(
+    "--ldap-paged-size",
+    type=int,
+    required=True,
+    help="Number of results per page to request from the ldap server.",
     show_default=True
 )
 def main(
@@ -163,12 +178,14 @@ def main(
     ldap_hostname: str,
     ldap_port: int,
     ldap_user_base_dn: str,
-    ldap_group_base_dn: str,
-    ldap_username_attribute: str,
-    ldap_member_attribute: str,
     ldap_user_search_filter: str,
+    ldap_username_attribute: str,
+    ldap_group_base_dn: str,
+    ldap_group_search_filter: str,
+    ldap_member_attribute: str,
     ldap_search_bind_dn: str,
-    ldap_search_bind_password: str
+    ldap_search_bind_password: str,
+    ldap_paged_size: int
 ):
     logging.info(f"running {__file__}")
 
@@ -203,17 +220,27 @@ def main(
         username=ldap_search_bind_dn,
         password=ldap_search_bind_password
     )
-    logging.debug(f"{ldap_client=}")
 
-    for record in ldap_iter_search(
-        client=ldap_client,
-        base=ldap_user_base_dn,
-        scope=ldap.SCOPE_SUBTREE,
-        filterstr=ldap_user_search_filter,
-        attrlist=[ldap_username_attribute],
-        page_size=10
-    ):
-        logging.debug(f"{record=}")
+    while True:
+
+        for record in ldap_iter_group_members(
+            client=ldap_client,
+            group_base=ldap_group_base_dn,
+            group_filter=ldap_group_search_filter,
+            group_search_filter="(cn=VM*)",
+            user_base=ldap_user_base_dn,
+            user_filter=ldap_user_search_filter,
+            member_attribute=ldap_member_attribute,
+            attributes=[ldap_username_attribute],
+            paged_size=ldap_paged_size
+        ):
+
+            dn = record["dn"]
+            username = record["attributes"].get(ldap_username_attribute, "")
+            logging.debug(f"{dn=} {ldap_username_attribute}={username}")
+
+        logging.debug(f"sleeping...")
+        time.sleep(60)
 
     logging.info("halting")
 

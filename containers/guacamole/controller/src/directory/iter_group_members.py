@@ -1,22 +1,21 @@
 import logging
 import typing
-import ldap
-from ldap.ldapobject import SimpleLDAPObject
+from ldap3 import Connection, SUBTREE
 from ldap_filter import Filter
 
 from .iter_search import ldap_iter_search
 
 
 def ldap_iter_group_members(
-    client: SimpleLDAPObject,
+    client: Connection,
     group_base: str,
     group_filter: str,
     group_search_filter: str,
     user_base: str,
     user_filter: str,
     member_attribute: str,
-    attrlist: typing.List[str],
-    page_size: int,
+    attributes: typing.List[str],
+    paged_size: int,
     visited_dns: typing.Set[str] = None
 ):
 
@@ -25,8 +24,8 @@ def ldap_iter_group_members(
         visited_dns = set()
 
     # Filter an iterator so repeated dn's are skipped
-    def visit(value) -> bool:
-        dn, attr = value
+    def visit(record) -> bool:
+        dn = record["dn"]
         if dn in visited_dns:
             logging.debug(f"skipping {dn=}")
             return False
@@ -45,17 +44,17 @@ def ldap_iter_group_members(
 
     # Iterate over the top level groups that return in the group base from
     # the group filter
-    for group_dn, group in filter(visit, ldap_iter_search(
+    for group in filter(visit, ldap_iter_search(
         client=client,
         base=group_base,
-        scope=ldap.SCOPE_SUBTREE,
-        filterstr=group_search_filter.to_string(),
-        attrlist=[member_attribute],
-        page_size=page_size
+        scope=SUBTREE,
+        search_filter=group_search_filter.to_string(),
+        attributes=[member_attribute],
+        paged_size=paged_size
     )):
 
         # Loop over the immediate members of the group under the group base
-        for member_dn in group.get(member_attribute, list()):
+        for member_dn in group["attributes"].get(member_attribute, list()):
 
             # Build a filter for testing the search object's dn is equal to the current member's dn
             member_dn_filter = Filter.attribute("distinguishedName").equal_to(member_dn)
@@ -71,8 +70,8 @@ def ldap_iter_group_members(
                 user_base=user_base,
                 user_filter=user_filter.to_string(),
                 member_attribute=member_attribute,
-                attrlist=attrlist,
-                page_size=page_size,
+                attributes=attributes,
+                paged_size=paged_size,
                 visited_dns=visited_dns
             ))
 
@@ -84,8 +83,8 @@ def ldap_iter_group_members(
             yield from filter(visit, ldap_iter_search(
                 client=client,
                 base=user_base,
-                scope=ldap.SCOPE_SUBTREE,
-                filterstr=user_dn_filter.to_string(),
-                attrlist=attrlist,
-                page_size=page_size
+                scope=SUBTREE,
+                search_filter=user_dn_filter.to_string(),
+                attributes=attributes,
+                paged_size=paged_size
             ))
