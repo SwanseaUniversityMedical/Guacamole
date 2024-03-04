@@ -139,7 +139,11 @@ spec:
             - name: CONTROLLER_LDAP_MEMBER_ATTRIBUTE
               value: {{ .Values.ldap.memberAttribute | quote }}
             - name: CONTROLLER_LDAP_USER_SEARCH_FILTER
-              value: {{ .Values.ldap.searchFilter | quote }}
+              value: {{ .Values.ldap.userSearchFilter | quote }}
+            - name: CONTROLLER_LDAP_GROUP_SEARCH_FILTER
+              value: {{ .Values.ldap.groupSearchFilter | quote }}
+            - name: CONTROLLER_LDAP_PAGED_SIZE
+              value: {{ .Values.ldap.pagedSize | quote }}
             - name: CONTROLLER_LDAP_SEARCH_BIND_DN
               valueFrom:
                 secretKeyRef:

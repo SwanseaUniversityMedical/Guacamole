@@ -19,10 +19,12 @@ ldap:
   hostname:
   port:
   userBaseDn:
+  userSearchFilter: "(objectClass=person)"
   groupBaseDn:
-  usernameAttribute:
-  memberAttribute:
-  searchFilter:
+  groupSearchFilter: "(objectClass=groupOfUniqueNames)"
+  memberAttribute: "uniqueMember"
+  usernameAttribute: "userPrincipalName"
+  pagedSize: 100
 
   secret:
   createSecret:
