@@ -1,3 +1,5 @@
+crds:
+  enabled: false
 
 defaultNodeSelector: {}
 defaultAffinity: {}

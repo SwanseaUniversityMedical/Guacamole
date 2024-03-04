@@ -1,0 +1,6 @@
+{{- range $manifest := .Values.extraManifests }}
+---
+{{- if typeIs "string" $manifest }}
+{{ tpl $manifest $ }}
+{{- end }}
+{{- end }}
