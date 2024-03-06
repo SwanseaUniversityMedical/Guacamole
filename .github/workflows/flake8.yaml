@@ -4,7 +4,7 @@ on:
   pull_request:
     paths:
       - '.flake8'
-      - 'containers/guacamole/controller/src/**.py'
+      - 'containers/controller/src/**.py'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -28,4 +28,4 @@ jobs:
           
       - name: run flake8
         run: |
-          flake8 containers/guacamole/controller/src
+          flake8 containers/controller/src
