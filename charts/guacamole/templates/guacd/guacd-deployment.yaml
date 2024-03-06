@@ -1,0 +1,109 @@
+{{- if .Values.guacd.enabled }}
+{{- $podNodeSelector := include "guacamole.podNodeSelector" (dict "Release" .Release "Values" .Values "nodeSelector" .Values.guacd.nodeSelector) }}
+{{- $podAffinity := include "guacamole.podAffinity" (dict "Release" .Release "Values" .Values "affinity" .Values.guacd.affinity) }}
+{{- $podTolerations := include "guacamole.podTolerations" (dict "Release" .Release "Values" .Values "tolerations" .Values.guacd.tolerations) }}
+{{- $podSecurityContext := include "guacamole.podSecurityContext" (dict "Release" .Release "Values" .Values "securityContext" .Values.guacd.securityContext) }}
+{{- $volumeMounts := include "guacamole.volumeMounts" (dict "Release" .Release "Values" .Values "extraVolumeMounts" .Values.guacd.extraVolumeMounts) }}
+{{- $volumes := include "guacamole.volumes" (dict "Release" .Release "Values" .Values "extraVolumes" .Values.guacd.extraVolumes) }}
+{{- $env := include "guacamole.env" (dict "Release" .Release "Values" .Values "extraEnv" .Values.guacd.extraEnv) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "guacamole.fullname" . }}-guacd
+
+  {{- if .Values.guacd.annotations }}
+  annotations:
+    {{- toYaml .Values.guacd.annotations | nindent 4 }}
+  {{- end }}
+
+  labels:
+    app: {{ include "guacamole.labels.app" . }}
+    component: guacd
+    chart: {{ include "guacamole.labels.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    {{- if .Values.guacd.labels }}
+    {{- toYaml .Values.guacd.labels | nindent 4 }}
+    {{- end }}
+
+spec:
+  replicas: {{ .Values.guacd.replicas }}
+
+  selector:
+    matchLabels:
+      app: {{ include "guacamole.labels.app" . }}
+      component: guacd
+      release: {{ .Release.Name }}
+
+  template:
+    metadata:
+
+      {{- if .Values.guacd.podAnnotations }}
+      annotations:
+        {{- toYaml .Values.guacd.podAnnotations | nindent 8 }}
+      {{- end }}
+
+      labels:
+        app: {{ include "guacamole.labels.app" . }}
+        component: guacd
+        release: {{ .Release.Name }}
+        {{- if .Values.guacd.podLabels }}
+        {{- toYaml .Values.guacd.podLabels | nindent 8 }}
+        {{- end }}
+
+    spec:
+      restartPolicy: Always
+
+      {{- if .Values.guacd.image.pullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.guacd.image.pullSecret }}
+      {{- end }}
+
+      {{- if $podNodeSelector | fromYaml }}
+      nodeSelector:
+        {{- $podNodeSelector | nindent 8 }}
+      {{- end }}
+
+      {{- if $podAffinity | fromYaml }}
+      affinity:
+        {{- $podAffinity | nindent 8 }}
+      {{- end }}
+
+      {{- if ne $podTolerations "[]" }}
+      tolerations:
+        {{- $podTolerations | nindent 8 }}
+      {{- end }}
+
+      {{- if $podSecurityContext | fromYaml }}
+      securityContext:
+        {{- $podSecurityContext | nindent 8 }}
+      {{- end }}
+
+      {{- if $volumes }}
+      volumes:
+        {{- $volumes | indent 8 }}
+      {{- end }}
+
+      containers:
+        - name: guacd
+          {{- include "guacamole.image" (dict "image" .Values.guacd.image) | indent 10 }}
+
+          {{- if $volumeMounts }}
+          volumeMounts:
+            {{- $volumeMounts | indent 12 }}
+          {{- end }}
+
+          {{- if $env }}
+          env:
+            {{- $env | indent 12 }}
+          {{- end }}
+
+          ports:
+            - name: guacd
+              containerPort: {{ .Values.guacd.port }}
+
+          {{- if .Values.guacd.resources }}
+          resources:
+            {{- toYaml .Values.guacd.resources | nindent 12 }}
+          {{- end }}
+{{- end }}

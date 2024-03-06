@@ -1,0 +1,35 @@
+{{- if .Values.database.enabled }}
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: {{ include "guacamole.fullname" . }}-database
+
+  labels:
+    app: {{ include "guacamole.labels.app" . }}
+    component: database
+    chart: {{ include "guacamole.labels.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+
+spec:
+  imageName: {{ .Values.database.image }}
+
+  bootstrap:
+    initdb:
+      database: {{ .Values.database.database }}
+      owner: {{ .Values.database.owner }}
+      secret:
+        name: {{ include "guacamole.database.secret" . }}
+      postInitApplicationSQLRefs:
+        configMapRefs:
+          - name: {{ include "guacamole.initdb.configmap" . }}
+            key: schema.sql
+
+  instances: {{ .Values.database.instances }}
+
+  {{- if .Values.database.storage }}
+  storage:
+    {{- toYaml .Values.database.storage | nindent 4 }}
+  {{- end }}
+
+{{- end }}

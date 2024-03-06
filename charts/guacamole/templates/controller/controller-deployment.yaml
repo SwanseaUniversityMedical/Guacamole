@@ -1,0 +1,166 @@
+{{- if .Values.controller.enabled }}
+{{- $podNodeSelector := include "guacamole.podNodeSelector" (dict "Release" .Release "Values" .Values "nodeSelector" .Values.controller.nodeSelector) }}
+{{- $podAffinity := include "guacamole.podAffinity" (dict "Release" .Release "Values" .Values "affinity" .Values.controller.affinity) }}
+{{- $podTolerations := include "guacamole.podTolerations" (dict "Release" .Release "Values" .Values "tolerations" .Values.controller.tolerations) }}
+{{- $podSecurityContext := include "guacamole.podSecurityContext" (dict "Release" .Release "Values" .Values "securityContext" .Values.controller.securityContext) }}
+{{- $volumeMounts := include "guacamole.volumeMounts" (dict "Release" .Release "Values" .Values "extraVolumeMounts" .Values.controller.extraVolumeMounts) }}
+{{- $volumes := include "guacamole.volumes" (dict "Release" .Release "Values" .Values "extraVolumes" .Values.controller.extraVolumes) }}
+{{- $env := include "guacamole.env" (dict "Release" .Release "Values" .Values "extraEnv" .Values.controller.extraEnv) }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "guacamole.fullname" . }}-controller
+
+  {{- if .Values.controller.annotations }}
+  annotations:
+    {{- toYaml .Values.controller.annotations | nindent 4 }}
+  {{- end }}
+
+  labels:
+    app: {{ include "guacamole.labels.app" . }}
+    component: controller
+    chart: {{ include "guacamole.labels.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+    {{- if .Values.controller.labels }}
+    {{- toYaml .Values.controller.labels | nindent 4 }}
+    {{- end }}
+
+spec:
+  replicas: {{ .Values.controller.replicas }}
+
+  selector:
+    matchLabels:
+      app: {{ include "guacamole.labels.app" . }}
+      component: controller
+      release: {{ .Release.Name }}
+
+  template:
+    metadata:
+
+      {{- if .Values.controller.podAnnotations }}
+      annotations:
+        {{- toYaml .Values.controller.podAnnotations | nindent 8 }}
+      {{- end }}
+
+      labels:
+        app: {{ include "guacamole.labels.app" . }}
+        component: controller
+        release: {{ .Release.Name }}
+        {{- if .Values.controller.podLabels }}
+        {{- toYaml .Values.controller.podLabels | nindent 8 }}
+        {{- end }}
+
+    spec:
+      restartPolicy: Always
+
+      {{- if .Values.controller.image.pullSecret }}
+      imagePullSecrets:
+        - name: {{ .Values.controller.image.pullSecret }}
+      {{- end }}
+
+      {{- if $podNodeSelector | fromYaml }}
+      nodeSelector:
+        {{- $podNodeSelector | nindent 8 }}
+      {{- end }}
+
+      {{- if $podAffinity | fromYaml }}
+      affinity:
+        {{- $podAffinity | nindent 8 }}
+      {{- end }}
+
+      {{- if ne $podTolerations "[]" }}
+      tolerations:
+        {{- $podTolerations | nindent 8 }}
+      {{- end }}
+
+      {{- if $podSecurityContext | fromYaml }}
+      securityContext:
+        {{- $podSecurityContext | nindent 8 }}
+      {{- end }}
+
+      {{- if $volumes }}
+      volumes:
+        {{- $volumes | indent 8 }}
+      {{- end }}
+
+      containers:
+        - name: controller
+          {{- include "guacamole.image" (dict "image" .Values.controller.image) | indent 10 }}
+
+          {{- if $volumeMounts }}
+          volumeMounts:
+            {{- $volumeMounts | indent 12 }}
+          {{- end }}
+
+          env:
+            - name: CONTROLLER_POSTGRES_HOSTNAME
+              value: {{ include "guacamole.database.service" . | quote }}
+            - name: CONTROLLER_POSTGRES_PORT
+              value: {{ .Values.database.port | quote }}
+            - name: CONTROLLER_POSTGRES_DATABASE
+              value: {{ .Values.database.database | quote }}
+            - name: CONTROLLER_POSTGRES_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "guacamole.database.secret" . }}
+                  key: username
+            - name: CONTROLLER_POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "guacamole.database.secret" . }}
+                  key: password
+
+            - name: CONTROLLER_GUACAMOLE_HOSTNAME
+              value: {{ include "guacamole.web.service" . | quote }}
+            - name: CONTROLLER_GUACAMOLE_PORT
+              value: {{ .Values.web.port | quote }}
+            - name: CONTROLLER_GUACAMOLE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "guacamole.controller.secret" . }}
+                  key: username
+            - name: CONTROLLER_GUACAMOLE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "guacamole.controller.secret" . }}
+                  key: password
+
+            - name: CONTROLLER_LDAP_HOSTNAME
+              value: {{ .Values.ldap.hostname | quote }}
+            - name: CONTROLLER_LDAP_PORT
+              value: {{ .Values.ldap.port | quote }}
+            - name: CONTROLLER_LDAP_USER_BASE_DN
+              value: {{ .Values.ldap.userBaseDn | quote }}
+            - name: CONTROLLER_LDAP_GROUP_BASE_DN
+              value: {{ .Values.ldap.groupBaseDn | quote }}
+            - name: CONTROLLER_LDAP_USERNAME_ATTRIBUTE
+              value: {{ .Values.ldap.usernameAttribute | quote }}
+            - name: CONTROLLER_LDAP_MEMBER_ATTRIBUTE
+              value: {{ .Values.ldap.memberAttribute | quote }}
+            - name: CONTROLLER_LDAP_USER_SEARCH_FILTER
+              value: {{ .Values.ldap.userSearchFilter | quote }}
+            - name: CONTROLLER_LDAP_GROUP_SEARCH_FILTER
+              value: {{ .Values.ldap.groupSearchFilter | quote }}
+            - name: CONTROLLER_LDAP_PAGED_SIZE
+              value: {{ .Values.ldap.pagedSize | quote }}
+            - name: CONTROLLER_LDAP_SEARCH_BIND_DN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "guacamole.ldap.secret" . }}
+                  key: username
+            - name: CONTROLLER_LDAP_SEARCH_BIND_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "guacamole.ldap.secret" . }}
+                  key: password
+
+            {{- if $env }}
+            {{- $env | indent 12 }}
+            {{- end }}
+
+          {{- if .Values.controller.resources }}
+          resources:
+            {{- toYaml .Values.controller.resources | nindent 12 }}
+          {{- end }}
+{{- end }}

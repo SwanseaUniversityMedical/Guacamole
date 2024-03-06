@@ -1,0 +1,42 @@
+{{- if and .Values.web.enabled .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "guacamole.fullname" . }}-web
+
+  labels:
+    app: {{ include "guacamole.labels.app" . }}
+    component: web
+    chart: {{ include "guacamole.labels.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+
+spec:
+
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host }}
+      {{- if .Values.ingress.tls.secretName }}
+      secretName: {{ .Values.ingress.tls.secretName }}
+      {{- end }}
+  {{- end }}
+
+  {{- if .Values.ingress.ingressClassName }}
+  ingressClassName: {{ .Values.ingress.ingressClassName }}
+  {{- end }}
+
+  rules:
+    - host: {{ .Values.ingress.host }}
+      http:
+        paths:
+
+          - path: {{ .Values.ingress.path }}
+            pathType: ImplementationSpecific
+            backend:
+              service:
+                name: {{ include "guacamole.fullname" . }}-web
+                port:
+                  name: web
+
+{{- end }}
