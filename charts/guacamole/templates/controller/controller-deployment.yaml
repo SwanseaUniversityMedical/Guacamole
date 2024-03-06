@@ -1,4 +1,7 @@
 {{- if .Values.controller.enabled }}
+{{- if not (.Capabilities.APIVersions.Has "guacamole.ukserp.ac.uk/v1") }}
+{{- fail "Guacamole CRDs not installed!" }}
+{{- end }}
 {{- $podNodeSelector := include "guacamole.podNodeSelector" (dict "Release" .Release "Values" .Values "nodeSelector" .Values.controller.nodeSelector) }}
 {{- $podAffinity := include "guacamole.podAffinity" (dict "Release" .Release "Values" .Values "affinity" .Values.controller.affinity) }}
 {{- $podTolerations := include "guacamole.podTolerations" (dict "Release" .Release "Values" .Values "tolerations" .Values.controller.tolerations) }}
