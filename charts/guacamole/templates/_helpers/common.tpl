@@ -50,7 +50,7 @@ Construct the configmap name for the client schema script.
 Construct the secret name for the client endpoint.
 */}}
 {{- define "guacamole.database.secret" -}}
-{{ .Values.database.secret | default (printf "%s-client-auth" (include "guacamole.fullname" .)) }}
+{{ .Values.database.secret | default (printf "%s-database-auth" (include "guacamole.fullname" .)) }}
 {{- end -}}
 
 {{/*

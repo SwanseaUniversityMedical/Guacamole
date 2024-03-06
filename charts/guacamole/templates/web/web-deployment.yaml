@@ -124,12 +124,10 @@ spec:
               value: {{ .Values.ldap.hostname | quote }}
             - name: LDAP_PORT
               value: {{ .Values.ldap.port | quote }}
-
             - name: LDAP_USER_BASE_DN
               value: {{ .Values.ldap.userBaseDn | quote }}
             - name: LDAP_GROUP_BASE_DN
               value: {{ .Values.ldap.groupBaseDn | quote }}
-
             - name: LDAP_USERNAME_ATTRIBUTE
               value: {{ .Values.ldap.usernameAttribute | quote }}
             - name: LDAP_MEMBER_ATTRIBUTE

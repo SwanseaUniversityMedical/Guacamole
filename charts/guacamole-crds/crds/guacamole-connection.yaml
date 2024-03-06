@@ -18,7 +18,42 @@ spec:
               properties:
                 url:
                   type: string
-                  description: Url to poll over http(s).
+                  description: Url to the host.
+
+                rdp:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                      description: Expose an RDP type connection to the host.
+                      default: false
+                    port:
+                      type: integer
+                      description: Port number for RDP connections to the host.
+                      default: 3389
+
+                ssh:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                      description: Expose an SHH type connection to the host.
+                      default: false
+                    port:
+                      type: integer
+                      description: Port number for SHH connections to the host.
+                      default: 22
+
+                ldap:
+                  type: object
+                  properties:
+                    enabled:
+                      type: boolean
+                      description: Synchronize user access to the connection from LDAP group membership.
+                      default: false
+                    groupFilter:
+                      type: string
+                      description: LDAP search filter returning one or more groups under the LDAP group base set on the controller deployment.
   scope: Namespaced
   names:
     plural: guacamoleconnections
