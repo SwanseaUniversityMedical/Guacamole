@@ -21,13 +21,13 @@ concurrency:
 
 jobs:
   controller-container:
-    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-container.yaml@containers-v1.3.1
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-container.yaml@v1.4.2-containers
     with:
       job-name: controller-container
       registry: ${{ vars.HARBOR_REGISTRY }}
       registry-user: ${{ vars.HARBOR_USER }}
       registry-repo: ${{ vars.HARBOR_PROJECT }}/controller
-      release-tag-format: 'controller-${version}'
+      release-tag-format: 'controller-container-${version}'
       cosign-public-key: ${{ vars.COSIGN_PUBLIC_KEY }}
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       build-file: containers/guacamole/controller/Dockerfile
