@@ -1,0 +1,31 @@
+name: Flake8
+
+on:
+  pull_request:
+    paths:
+      - '.flake8'
+      - 'containers/controller/src/**.py'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  flake8:
+    runs-on:
+      labels: [self-hosted, linux, x64]
+      group: light
+    
+    steps:
+      - name: clone repo
+        uses: actions/checkout@v4
+        
+      - name: install flake8
+        run: pip install flake8
+        
+      - name: install flake8 annotations
+        uses: rbialon/flake8-annotations@v1
+          
+      - name: run flake8
+        run: |
+          flake8 containers/controller/src

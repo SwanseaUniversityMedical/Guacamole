@@ -17,4 +17,3 @@ def ldap_authenticate_user(
     client.start_tls()
 
     return client
-
