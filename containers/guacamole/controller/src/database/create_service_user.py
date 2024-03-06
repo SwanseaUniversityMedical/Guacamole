@@ -7,10 +7,10 @@ from sqlalchemy.engine import Connection
 
 
 def db_create_service_user(
-        client: Connection,
-        username: str,
-        password: str
-    ):
+    client: Connection,
+    username: str,
+    password: str
+):
 
     logging.debug(f"{username=}")
 

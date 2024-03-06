@@ -239,7 +239,7 @@ def main(
             username = record["attributes"].get(ldap_username_attribute, "")
             logging.debug(f"{dn=} {ldap_username_attribute}={username}")
 
-        logging.debug(f"sleeping...")
+        logging.debug("sleeping...")
         time.sleep(60)
 
     logging.info("halting")
