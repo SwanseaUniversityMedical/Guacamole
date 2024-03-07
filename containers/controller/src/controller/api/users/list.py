@@ -15,7 +15,7 @@ def api_list_users(
     data_source: str
 ) -> dict:
 
-    logging.debug(f"List users")
+    logging.debug("List users")
     response = requests.get(
         build_url(
             scheme="http",

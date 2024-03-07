@@ -2,7 +2,6 @@ import logging
 
 from .get_unique_users import get_unique_users
 from ..api import API
-from ..directory import LDAP
 
 
 def sync_users(
@@ -31,4 +30,3 @@ def sync_users(
     for observed_user in observed_users.values():
         if (observed_user["username"] not in expected_users) and (observed_user["username"] != api.username):
             api.delete_user(username=observed_user["username"])
-

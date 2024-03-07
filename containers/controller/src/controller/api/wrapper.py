@@ -56,7 +56,6 @@ class API:
             data_source=self.data_source
         )
 
-
     def get_user(self, username: str):
         # logging.info(f"Get user {username=}")
         return api_get_user(
@@ -66,7 +65,6 @@ class API:
             data_source=self.data_source,
             username=username
         )
-
 
     def get_user_effective_permissions(self, username: str):
         # logging.info(f"Get user effective permissions {username=}")
@@ -102,7 +100,6 @@ class API:
             organization=organization,
             role=role
         )
-
 
     def update_user(
         self,
@@ -213,7 +210,6 @@ class API:
             conn_id=conn_id
         )
 
-
     def get_connection_parameters(self, conn_id: int):
         # logging.info(f"Get connection parameters {conn_id=}")
         return api_get_connection_parameters(
@@ -223,7 +219,6 @@ class API:
             data_source=self.data_source,
             conn_id=conn_id
         )
-
 
     def create_connection(
         self,
@@ -248,7 +243,6 @@ class API:
         )
 
         return response["identifier"]
-
 
     def update_connection(
         self,
@@ -285,8 +279,8 @@ class API:
         try:
             conn_id = self.get_connection_id(conn_name=name)
 
-            connection = self.get_connection(conn_id=conn_id)
-            connection_parameters = self.get_connection_parameters(conn_id=conn_id)
+            # connection = self.get_connection(conn_id=conn_id)
+            # connection_parameters = self.get_connection_parameters(conn_id=conn_id)
 
             # TODO determine if connection needs updating
             needs_update = True
@@ -306,7 +300,6 @@ class API:
 
             # else:
             #     logging.info(f"Skipping updating connection {name=}")
-
 
         except APIConnectionDoesNotExistError:
 
@@ -357,7 +350,6 @@ class API:
             username=username,
             conn_id=conn_id,
         )
-
 
     def list_connection_users(
         self,

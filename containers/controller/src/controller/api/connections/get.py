@@ -43,6 +43,7 @@ def api_get_connection(
     logging.debug(f"{response=}")
     return response
 
+
 def api_get_connection_parameters(
     hostname: str,
     port: int,

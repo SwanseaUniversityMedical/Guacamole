@@ -16,7 +16,6 @@ def sync_connections(
     # Add connections via api
     for manifest_name, manifest in manifests.items():
 
-
         name = manifest["metadata"]["name"]
         namespace = manifest["metadata"]["namespace"]
 

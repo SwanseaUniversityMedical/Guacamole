@@ -15,7 +15,7 @@ def api_list_connections(
     data_source: str
 ) -> dict:
 
-    logging.debug(f"List connections")
+    logging.debug("List connections")
     response = requests.get(
         build_url(
             scheme="http",
