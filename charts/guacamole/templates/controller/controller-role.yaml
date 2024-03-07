@@ -1,0 +1,8 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "guacamole.fullname" . }}-controller
+rules:
+  - apiGroups: ["", "canary.ukserp.ac.uk"]
+    resources: ["guacamoleconnections"]
+    verbs: ["get", "watch", "list"]

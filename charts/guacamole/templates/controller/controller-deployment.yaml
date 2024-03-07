@@ -57,6 +57,8 @@ spec:
     spec:
       restartPolicy: Always
 
+      serviceAccountName: {{ include "guacamole.fullname" . }}-controller
+
       {{- if .Values.controller.image.pullSecret }}
       imagePullSecrets:
         - name: {{ .Values.controller.image.pullSecret }}
