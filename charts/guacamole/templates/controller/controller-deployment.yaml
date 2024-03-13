@@ -160,6 +160,9 @@ spec:
                   name: {{ include "guacamole.ldap.secret" . }}
                   key: password
 
+            - name: CONTROLLER_KUBE_NAMESPACE
+              value: {{ .Release.Namespace | quote }}
+
             {{- if $env }}
             {{- $env | indent 12 }}
             {{- end }}

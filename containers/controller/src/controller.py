@@ -1,6 +1,5 @@
+import asyncio
 import logging
-import time
-
 import click
 
 from database import (
@@ -17,6 +16,10 @@ from directory import (
     ldap_iter_group_members
 )
 
+from kube import (
+    kube_watch,
+    GuacamoleConnection
+)
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -165,6 +168,13 @@ logging.basicConfig(
     help="Number of results per page to request from the ldap server.",
     show_default=True
 )
+@click.option(
+    "--kube-namespace",
+    type=str,
+    required=True,
+    help="Namespace for looking for Guacamole CRD instances.",
+    show_default=True
+)
 def main(
     postgres_hostname: str,
     postgres_port: int,
@@ -185,7 +195,8 @@ def main(
     ldap_member_attribute: str,
     ldap_search_bind_dn: str,
     ldap_search_bind_password: str,
-    ldap_paged_size: int
+    ldap_paged_size: int,
+    kube_namespace: str
 ):
     logging.info(f"running {__file__}")
 
@@ -214,33 +225,41 @@ def main(
     )
     logging.debug(f"{token=}")
 
-    ldap_client = ldap_authenticate_user(
-        hostname=ldap_hostname,
-        port=ldap_port,
-        username=ldap_search_bind_dn,
-        password=ldap_search_bind_password
+    asyncio.run(
+        kube_watch(
+            namespace=kube_namespace,
+            factory=GuacamoleConnection
+        ),
+        debug=True
     )
 
-    while True:
-
-        for record in ldap_iter_group_members(
-            client=ldap_client,
-            group_base=ldap_group_base_dn,
-            group_filter=ldap_group_search_filter,
-            group_search_filter="(cn=VM*)",
-            user_base=ldap_user_base_dn,
-            user_filter=ldap_user_search_filter,
-            member_attribute=ldap_member_attribute,
-            attributes=[ldap_username_attribute],
-            paged_size=ldap_paged_size
-        ):
-
-            dn = record["dn"]
-            username = record["attributes"].get(ldap_username_attribute, "")
-            logging.debug(f"{dn=} {ldap_username_attribute}={username}")
-
-        logging.debug("sleeping...")
-        time.sleep(60)
+    # ldap_client = ldap_authenticate_user(
+    #     hostname=ldap_hostname,
+    #     port=ldap_port,
+    #     username=ldap_search_bind_dn,
+    #     password=ldap_search_bind_password
+    # )
+    #
+    # while True:
+    #
+    #     for record in ldap_iter_group_members(
+    #         client=ldap_client,
+    #         group_base=ldap_group_base_dn,
+    #         group_filter=ldap_group_search_filter,
+    #         group_search_filter="(cn=VM*)",
+    #         user_base=ldap_user_base_dn,
+    #         user_filter=ldap_user_search_filter,
+    #         member_attribute=ldap_member_attribute,
+    #         attributes=[ldap_username_attribute],
+    #         paged_size=ldap_paged_size
+    #     ):
+    #
+    #         dn = record["dn"]
+    #         username = record["attributes"].get(ldap_username_attribute, "")
+    #         logging.debug(f"{dn=} {ldap_username_attribute}={username}")
+    #
+    #     logging.debug("sleeping...")
+    #     time.sleep(60)
 
     logging.info("halting")
 

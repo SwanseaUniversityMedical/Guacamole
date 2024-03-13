@@ -65,6 +65,18 @@ Tagged as controller:0.0.0 so that docker-for-windows kubernetes can access it w
 docker build -f containers\controller\Dockerfile -t controller:0.0.0 containers\controller
 ```
 
+### Restart the Guacamole controller after rebuilding it
+
+If the chart has changed then you'll need to run `helm upgrade ...` see below.
+```bash
+kubectl rollout restart -n guacamole deployment/guacamole-controller
+```
+
+### Debug the Guacamole controller logs
+```bash
+kubectl logs -n guacamole deployment/guacamole-controller
+```
+
 ### Install the Guacamole CRDs chart
 ```bash
 helm upgrade \

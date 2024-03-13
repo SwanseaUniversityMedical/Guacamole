@@ -3,6 +3,6 @@ kind: Role
 metadata:
   name: {{ include "guacamole.fullname" . }}-controller
 rules:
-  - apiGroups: ["", "canary.ukserp.ac.uk"]
+  - apiGroups: ["guacamole.ukserp.ac.uk"]
     resources: ["guacamoleconnections"]
     verbs: ["get", "watch", "list"]
