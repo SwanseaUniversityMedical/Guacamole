@@ -4,6 +4,8 @@ import typing
 
 import kubernetes_asyncio as k8s
 
+
+from .custom_objects_api import CustomObjectsApi
 from .object import KubeObject
 
 
@@ -27,7 +29,7 @@ async def kube_watch(
 
                 logging.info(f"watch kubes resource changes after {resource_version=}")
                 async with k8s.client.ApiClient() as api:
-                    crds = k8s.client.CustomObjectsApi(api)
+                    crds = CustomObjectsApi(api)
 
                     async with k8s.watch.Watch().stream(
                         crds.list_namespaced_custom_object,
