@@ -1,5 +1,7 @@
 import asyncio
 import logging
+from functools import partial
+
 import click
 
 from database import (
@@ -23,7 +25,7 @@ from kube import (
 
 logging.basicConfig(
     level=logging.DEBUG,
-    format="[%(asctime)s %(filename)s:%(lineno)s %(funcName)s] %(message)s",
+    format="[%(asctime)s %(levelname)s %(filename)s:%(lineno)s %(funcName)s] %(message)s",
 )
 
 
@@ -200,7 +202,7 @@ def main(
 ):
     logging.info(f"running {__file__}")
 
-    logging.info("connect to client")
+    logging.info("Connect to database")
     with db_connection(
         hostname=postgres_hostname,
         port=postgres_port,
@@ -209,36 +211,57 @@ def main(
         password=postgres_password
     ).begin() as database_client:
 
-        logging.info("create service user in client")
+        logging.info("Create service user in database")
         db_create_service_user(
             client=database_client,
             username=guacamole_username,
             password=guacamole_password
         )
 
-    logging.info("authenticate with rest api as service user")
-    token = api_authenticate_user(
+    logging.info("Authenticate with rest api as service user")
+    api_token = api_authenticate_user(
         hostname=guacamole_hostname,
         port=guacamole_port,
         username=guacamole_username,
         password=guacamole_password
     )
-    logging.debug(f"{token=}")
 
+    logging.info("Authenticate with ldap as search bind")
+    ldap_client = ldap_authenticate_user(
+        hostname=ldap_hostname,
+        port=ldap_port,
+        username=ldap_search_bind_dn,
+        password=ldap_search_bind_password
+    )
+
+    logging.info("Watch kubes api for GuacamoleConnection objects")
     asyncio.run(
         kube_watch(
+            group="guacamole.ukserp.ac.uk",
+            version="v1",
+            plural="guacamoleconnections",
             namespace=kube_namespace,
-            factory=GuacamoleConnection
+            factory=partial(
+                GuacamoleConnection,
+                ldap_iter_group_members=partial(
+                    ldap_iter_group_members,
+                    client=ldap_client,
+                    user_base=ldap_user_base_dn,
+                    user_filter=ldap_user_search_filter,
+                    attributes=[ldap_username_attribute],
+                    group_base=ldap_group_base_dn,
+                    group_filter=ldap_group_search_filter,
+                    member_attribute=ldap_member_attribute,
+                    paged_size=ldap_paged_size
+                ),
+                ldap_username_attribute=ldap_username_attribute,
+                api_token=api_token
+            )
         ),
         debug=True
     )
 
-    # ldap_client = ldap_authenticate_user(
-    #     hostname=ldap_hostname,
-    #     port=ldap_port,
-    #     username=ldap_search_bind_dn,
-    #     password=ldap_search_bind_password
-    # )
+
     #
     # while True:
     #
