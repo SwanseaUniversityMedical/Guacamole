@@ -27,6 +27,8 @@ ldap:
 
   memberAttribute: "uniqueMember"
   usernameAttribute: "userPrincipalName"
+  fullnameAttribute: "displayName"
+  emailAttribute: "mail"
 
   pagedSize: 100
 

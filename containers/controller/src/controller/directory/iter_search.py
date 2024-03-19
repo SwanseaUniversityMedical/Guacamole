@@ -19,7 +19,7 @@ def ldap_iter_search(
     search_filter = Filter.parse(search_filter)
 
     # Escape the list of return attrs
-    attributes = [Filter.escape(a) for a in attributes]
+    attributes = list({Filter.escape(a) for a in attributes})
 
     yield from client.extend.standard.paged_search(
         search_base=base,

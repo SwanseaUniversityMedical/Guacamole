@@ -1,26 +1,21 @@
 import logging
 import time
 
+import kubernetes as k8s
 import click
 
-from database import (
+from controller.database import (
     db_connection,
     db_create_service_user
 )
 
-from api import (
-    api_authenticate_user
-)
-
-from directory import (
-    ldap_authenticate_user,
-    ldap_iter_group_members
-)
-
+from controller.api import API
+from controller.directory import LDAP
+from controller.sync import sync
 
 logging.basicConfig(
-    level=logging.DEBUG,
-    format="[%(asctime)s %(filename)s:%(lineno)s %(funcName)s] %(message)s",
+    level=logging.INFO,
+    format="[%(asctime)s %(levelname)s %(filename)s:%(lineno)s %(funcName)s] %(message)s",
 )
 
 
@@ -124,6 +119,20 @@ logging.basicConfig(
     show_default=True
 )
 @click.option(
+    "--ldap-fullname-attribute",
+    type=str,
+    required=True,
+    help="LDAP fullname attribute of the user records.",
+    show_default=True
+)
+@click.option(
+    "--ldap-email-attribute",
+    type=str,
+    required=True,
+    help="LDAP email attribute of the user records.",
+    show_default=True
+)
+@click.option(
     "--ldap-member-attribute",
     type=str,
     required=True,
@@ -165,6 +174,13 @@ logging.basicConfig(
     help="Number of results per page to request from the ldap server.",
     show_default=True
 )
+@click.option(
+    "--kube-namespace",
+    type=str,
+    required=True,
+    help="Namespace for looking for Guacamole CRD instances.",
+    show_default=True
+)
 def main(
     postgres_hostname: str,
     postgres_port: int,
@@ -180,16 +196,19 @@ def main(
     ldap_user_base_dn: str,
     ldap_user_search_filter: str,
     ldap_username_attribute: str,
+    ldap_fullname_attribute: str,
+    ldap_email_attribute: str,
     ldap_group_base_dn: str,
     ldap_group_search_filter: str,
     ldap_member_attribute: str,
     ldap_search_bind_dn: str,
     ldap_search_bind_password: str,
-    ldap_paged_size: int
+    ldap_paged_size: int,
+    kube_namespace: str
 ):
     logging.info(f"running {__file__}")
 
-    logging.info("connect to client")
+    logging.info("Connect to database")
     with db_connection(
         hostname=postgres_hostname,
         port=postgres_port,
@@ -198,51 +217,52 @@ def main(
         password=postgres_password
     ).begin() as database_client:
 
-        logging.info("create service user in client")
+        logging.info("Create service user in database")
         db_create_service_user(
             client=database_client,
             username=guacamole_username,
             password=guacamole_password
         )
 
-    logging.info("authenticate with rest api as service user")
-    token = api_authenticate_user(
+    logging.info("Authenticate with rest api as service user")
+    api = API(
         hostname=guacamole_hostname,
         port=guacamole_port,
         username=guacamole_username,
-        password=guacamole_password
+        password=guacamole_password,
+        data_source="postgresql"
     )
-    logging.debug(f"{token=}")
 
-    ldap_client = ldap_authenticate_user(
+    logging.info("Authenticate with ldap as search bind")
+    ldap = LDAP(
         hostname=ldap_hostname,
         port=ldap_port,
         username=ldap_search_bind_dn,
-        password=ldap_search_bind_password
+        password=ldap_search_bind_password,
+        user_base=ldap_user_base_dn,
+        user_filter=ldap_user_search_filter,
+        username_attribute=ldap_username_attribute,
+        fullname_attribute=ldap_fullname_attribute,
+        email_attribute=ldap_email_attribute,
+        group_base=ldap_group_base_dn,
+        group_filter=ldap_group_search_filter,
+        member_attribute=ldap_member_attribute,
+        paged_size=ldap_paged_size,
     )
 
+    logging.info("Load kube config")
+    k8s.config.load_incluster_config()
+
     while True:
+        sync(
+            kube_namespace=kube_namespace,
+            ldap=ldap,
+            api=api
+        )
 
-        for record in ldap_iter_group_members(
-            client=ldap_client,
-            group_base=ldap_group_base_dn,
-            group_filter=ldap_group_search_filter,
-            group_search_filter="(cn=VM*)",
-            user_base=ldap_user_base_dn,
-            user_filter=ldap_user_search_filter,
-            member_attribute=ldap_member_attribute,
-            attributes=[ldap_username_attribute],
-            paged_size=ldap_paged_size
-        ):
+        time.sleep(30)
 
-            dn = record["dn"]
-            username = record["attributes"].get(ldap_username_attribute, "")
-            logging.debug(f"{dn=} {ldap_username_attribute}={username}")
-
-        logging.debug("sleeping...")
-        time.sleep(60)
-
-    logging.info("halting")
+    logging.info("Halting")
 
 
 if __name__ == "__main__":

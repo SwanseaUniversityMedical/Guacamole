@@ -57,6 +57,8 @@ spec:
     spec:
       restartPolicy: Always
 
+      serviceAccountName: {{ include "guacamole.fullname" . }}-controller
+
       {{- if .Values.controller.image.pullSecret }}
       imagePullSecrets:
         - name: {{ .Values.controller.image.pullSecret }}
@@ -139,6 +141,10 @@ spec:
               value: {{ .Values.ldap.groupBaseDn | quote }}
             - name: CONTROLLER_LDAP_USERNAME_ATTRIBUTE
               value: {{ .Values.ldap.usernameAttribute | quote }}
+            - name: CONTROLLER_LDAP_FULLNAME_ATTRIBUTE
+              value: {{ .Values.ldap.fullnameAttribute | quote }}
+            - name: CONTROLLER_LDAP_EMAIL_ATTRIBUTE
+              value: {{ .Values.ldap.emailAttribute | quote }}
             - name: CONTROLLER_LDAP_MEMBER_ATTRIBUTE
               value: {{ .Values.ldap.memberAttribute | quote }}
             - name: CONTROLLER_LDAP_USER_SEARCH_FILTER
@@ -157,6 +163,9 @@ spec:
                 secretKeyRef:
                   name: {{ include "guacamole.ldap.secret" . }}
                   key: password
+
+            - name: CONTROLLER_KUBE_NAMESPACE
+              value: {{ .Release.Namespace | quote }}
 
             {{- if $env }}
             {{- $env | indent 12 }}
