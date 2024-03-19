@@ -23,7 +23,8 @@ class LDAP:
     paged_size: int
     client: Connection
 
-    def __init__(self,
+    def __init__(
+        self,
         hostname: str,
         port: int,
         user_base: str,
@@ -60,7 +61,8 @@ class LDAP:
             password=self.password
         )
 
-    def iter_group_members(self,
+    def iter_group_members(
+        self,
         group_search_filter: str,
         attributes: typing.List[str]
     ):

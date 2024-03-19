@@ -16,7 +16,8 @@ class API:
     data_source: str
     token: str
 
-    def __init__(self,
+    def __init__(
+        self,
         hostname: str,
         port: int,
         username: str,
@@ -37,7 +38,8 @@ class API:
             password=password
         )
 
-    def create_or_update_user(self,
+    def create_or_update_user(
+        self,
         username: str,
         fullname: str,
         email: str,

@@ -3,7 +3,6 @@ import logging
 import kubernetes as k8s
 
 
-
 def kube_object_name(manifest: dict) -> str:
     metadata = manifest["metadata"]
     return "{kind}/{namespace}/{name}".format(

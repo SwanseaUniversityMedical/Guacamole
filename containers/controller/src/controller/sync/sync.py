@@ -1,5 +1,3 @@
-import logging
-
 from .get_connections_by_manifest import get_connections_by_manifest
 from .get_unique_users import get_unique_users
 from .get_users_by_manifest import get_users_by_manifest
@@ -31,3 +29,5 @@ def sync(
     expected_connections_by_manifest = get_connections_by_manifest(
         namespace=kube_namespace, manifests=manifests)
 
+    if expected_connections_by_manifest:
+        pass
