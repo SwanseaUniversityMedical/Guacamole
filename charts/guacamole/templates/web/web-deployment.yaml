@@ -94,6 +94,12 @@ spec:
           {{- end }}
 
           env:
+            - name: LOGBACK_LEVEL
+              value: debug
+            - name: GUACAMOLE_LOG_LEVEL
+              value: "debug"
+            - name: LOG_LEVEL
+              value: debug
             - name: WEBAPP_CONTEXT
               value: ROOT
             - name: GUACD_HOSTNAME

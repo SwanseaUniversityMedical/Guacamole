@@ -58,6 +58,18 @@ database:
 kubectl apply -f https://raw.githubusercontent.com/cloudnative-pg/cloudnative-pg/release-1.22/releases/cnpg-1.22.1.yaml
 ```
 
+### Install Kubevirt CRDs
+```bash
+kubectl create -f https://github.com/kubevirt/kubevirt/releases/download/v1.2.0/kubevirt-cr.yaml
+```
+
+### Install Kubevirt Operator
+```bash
+kubectl create -f https://github.com/kubevirt/kubevirt/releases/download/v1.2.0/kubevirt-operator.yaml
+
+kubectl -n kubevirt patch kubevirt kubevirt --type=merge --patch '{"spec":{"configuration":{"developerConfiguration":{"useEmulation":true}}}}'
+```
+
 ### Build the Guacamole Controller container
 
 Tagged as controller:0.0.0 so that docker-for-windows kubernetes can access it without trying to pull it.

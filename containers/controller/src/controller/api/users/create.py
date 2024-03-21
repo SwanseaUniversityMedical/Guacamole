@@ -5,7 +5,7 @@ from urllib.parse import quote
 
 import requests
 
-from .build_url import build_url
+from ..build_url import build_url
 
 
 def api_create_user(

@@ -6,9 +6,9 @@ def get_unique_users(
 ):
     # Flatten unique users by LDAP dn
     expected_users = {
-        record["dn"]: record
-        for records in users_by_manifest.values()
-        for record in records
+        user["username"]: user
+        for users in users_by_manifest.values()
+        for user in users.values()
     }
     logging.info(f"Found {len(expected_users)} unique users across {len(users_by_manifest)} manifests")
 
