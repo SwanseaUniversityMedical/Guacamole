@@ -11,7 +11,7 @@ spec:
   podSelector:
     matchLabels:
       app: {{ include "guacamole.labels.app" . }}
-      component: controller
+      component: database
       release: {{ .Release.Name }}
   policyTypes:
   - Ingress
