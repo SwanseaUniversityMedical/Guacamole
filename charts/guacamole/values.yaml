@@ -100,8 +100,9 @@ guacd:
 
   securityContext: {}
 
-  labels: {}
+  labels: {app: guacd}
   podLabels: {}
+  ingresslabels: [app: web]
 
   annotations: {}
   podAnnotations: {}
@@ -174,7 +175,11 @@ database:
 
   instances: 1
 
+  labels: {app: database}
+
   storage:
+
+  ingresslabels: [app: web, app: controller]
 
   # TODO currently does not set the port on the client, just here for other places to read from
   port: 5432
