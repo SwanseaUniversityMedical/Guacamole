@@ -10,7 +10,10 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      {{- toYaml .Values.guacd.labels | nindent 8 }}
+      matchLabels:
+      app: {{ include "guacamole.labels.app" . }}
+      component: guacd
+      release: {{ .Release.Name }}
   policyTypes:
   - Ingress
   - Egress
@@ -19,6 +22,8 @@ spec:
     - from:
         - podSelector:
             matchLabels:
-              {{- toYaml .Values.guacd.ingresslabels | nindent 16 }}
+              app: {{ include "guacamole.labels.app" . }}
+              component: web
+              release: {{ .Release.Name }}
   egress:
     - {}
