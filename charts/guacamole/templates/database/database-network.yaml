@@ -32,7 +32,3 @@ spec:
 {{/*              app: {{ include "guacamole.labels.app" . }}*/}}
 {{/*              component: controller*/}}
 {{/*              release: {{ .Release.Name }}*/}}
-  egress:
-    - to:
-        - podSelector:
-            {}
