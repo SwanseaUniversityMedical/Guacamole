@@ -55,6 +55,7 @@ spec:
         {{- end }}
 
     spec:
+      terminationGracePeriodSeconds: 0
       restartPolicy: Always
 
       serviceAccountName: {{ include "guacamole.fullname" . }}-controller

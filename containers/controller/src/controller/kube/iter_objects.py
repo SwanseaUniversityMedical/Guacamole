@@ -5,8 +5,7 @@ import kubernetes as k8s
 
 def kube_object_name(manifest: dict) -> str:
     metadata = manifest["metadata"]
-    return "{kind}/{namespace}/{name}".format(
-        kind=manifest["kind"],
+    return "{namespace}/{name}".format(
         namespace=metadata["namespace"],
         name=metadata["name"]
     )

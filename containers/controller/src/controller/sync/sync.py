@@ -1,7 +1,7 @@
-from .get_connections_by_manifest import get_connections_by_manifest
-from .get_unique_users import get_unique_users
+
 from .get_users_by_manifest import get_users_by_manifest
 from .get_manifests import get_manifests
+from .sync_connections import sync_connections
 from .sync_users import sync_users
 
 from ..api import API
@@ -14,20 +14,22 @@ def sync(
     kube_namespace: str
 ):
 
-    manifests = get_manifests(
-        namespace=kube_namespace)
+    # Lookup GuacamoleConnection manifests from kubes
+    manifests = get_manifests(namespace=kube_namespace)
 
-    expected_users_by_manifest = get_users_by_manifest(
-        ldap=ldap, manifests=manifests)
+    # Search LDAP for each GuacamoleConnection manifest to get its expected users
+    expected_users_by_manifest = get_users_by_manifest(ldap=ldap, manifests=manifests)
 
-    expected_users = get_unique_users(
-        users_by_manifest=expected_users_by_manifest)
-
+    # For all the unique users create or update them using the Guacamole REST api
+    # Set or update their `valid_until` field to expire if this sync starts failing
     sync_users(
-        api=api, ldap=ldap, expected_users=expected_users)
+        api=api,
+        expected_users_by_manifest=expected_users_by_manifest
+    )
 
-    expected_connections_by_manifest = get_connections_by_manifest(
-        namespace=kube_namespace, manifests=manifests)
-
-    if expected_connections_by_manifest:
-        pass
+    # For all the connections create or update them using the Guacamole REST api
+    sync_connections(
+        api=api,
+        manifests=manifests,
+        expected_users_by_manifest=expected_users_by_manifest
+    )

@@ -5,25 +5,23 @@ from urllib.parse import quote
 
 import requests
 
-from .build_url import build_url
-from .error import APIUserDoesNotExistError
+from ..build_url import build_url
 
 
-def api_get_user(
+def api_list_connections(
     hostname: str,
     port: int,
     token: str,
-    data_source: str,
-    username: str,
+    data_source: str
 ) -> dict:
 
-    logging.debug(f"Get user {username=}")
+    logging.debug(f"List connections")
     response = requests.get(
         build_url(
             scheme="http",
             netloc=f"{hostname}:{port}",
 
-            path=f"/api/session/data/{quote(data_source)}/users/{quote(username)}",
+            path=f"/api/session/data/{quote(data_source)}/connections",
             query=dict(
                 token=token
             )
@@ -34,8 +32,7 @@ def api_get_user(
     )
 
     if response.status_code not in (200,):
-        # TODO this exception catches too much
-        ex = APIUserDoesNotExistError(("Bad status code!", response.status_code, response.text))
+        ex = RuntimeError(("Bad status code!", response.status_code, response.text))
         logging.exception("Bad status code!", exc_info=ex)
         raise ex
 
