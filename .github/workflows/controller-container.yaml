@@ -2,12 +2,28 @@ name: Controller Container
 
 on:
   pull_request:
+    # Ignore PRs on branches specifically intended for other assets
+    branches-ignore:
+      - '*/guacamole-chart*'
+      - '*/guacamole-crds-chart*'
+    # Only consider PRs that change files for this asset, including ci scripts
     paths:
+      - '.github/workflows/flake8.yaml'
+      - '.github/workflows/controller-container.yaml'
       - 'containers/controller/**'
+    # Make sure all workflows that are "required checks" for a given
+    # branch protection rule have the same paths: and branches-ignore:
+    # filters. Otherwise, you can end up in a deadlock waiting on a
+    # required check that will never be executed.
   push:
+    # Only release off of release and maintenance branches for this asset
     branches:
-      - main
+      - 'maintenance/controller-container/[0-9]+.x.x'
+      - 'maintenance/controller-container/[0-9]+.[0-9]+.x'
+      - 'main'
+    # Only consider pushes that change files for this asset, including ci scripts
     paths:
+      - '.github/workflows/controller-container.yaml'
       - 'containers/controller/**'
 
 permissions:
@@ -17,17 +33,25 @@ permissions:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
+  # Needed to generate releases safely
   cancel-in-progress: false
 
 jobs:
+  # Job name must be unique across repo to target
+  # branch protection rules "required checks" properly!
   controller-container:
-    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-container.yaml@v1.4.2-containers
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-container.yaml@v1.6.0-containers
     with:
       job-name: controller-container
       registry: ${{ vars.HARBOR_REGISTRY }}
       registry-user: ${{ vars.HARBOR_USER }}
       registry-repo: ${{ vars.HARBOR_PROJECT }}/controller
       release-tag-format: 'controller-container-${version}'
+      release-branches: |
+        [
+          'maintenance/controller-container/[0-9]+\.([0-9]+|x)\.x',
+          'main'
+        ]
       cosign-public-key: ${{ vars.COSIGN_PUBLIC_KEY }}
       slack-channel: ${{ vars.SLACK_CHANNEL }}
       build-file: containers/controller/Dockerfile
