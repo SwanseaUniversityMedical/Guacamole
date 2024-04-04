@@ -10,6 +10,7 @@ export default {
         'controller-container',
         'guacamole-chart',
         'guacamole-crds-chart'
-    ]]
+    ]],
+    'subject-case': [RuleConfigSeverity.Error, 'never', []],
   }
 };
