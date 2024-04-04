@@ -24,9 +24,9 @@ spec:
             app: {{ include "guacamole.labels.app" . }}
             component: web
             release: {{ .Release.Name }}
-        - podSelector:
-            matchLabels:
-              cnpg.io/cluster: {{ include "guacamole.fullname" . }}-database
+      - podSelector:
+          matchLabels:
+            cnpg.io/cluster: {{ include "guacamole.fullname" . }}-database
       - podSelector:
           matchLabels:
             app: {{ include "guacamole.labels.app" . }}
