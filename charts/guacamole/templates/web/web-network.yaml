@@ -25,15 +25,14 @@ spec:
             component: controller
             release: {{ .Release.Name }}
   egress:
-    - {}
-{{/*    - to:*/}}
+    - to:
 {{/*        - podSelector:*/}}
 {{/*            matchLabels:*/}}
 {{/*              app: {{ include "guacamole.labels.app" . }}*/}}
 {{/*              component: database*/}}
 {{/*              release: {{ .Release.Name }}*/}}
-{{/*        - podSelector:*/}}
-{{/*            matchLabels:*/}}
-{{/*              app: {{ include "guacamole.labels.app" . }}*/}}
-{{/*              component: guacd*/}}
-{{/*              release: {{ .Release.Name }}*/}}
+        - podSelector:
+            matchLabels:
+              app: {{ include "guacamole.labels.app" . }}
+              component: guacd
+              release: {{ .Release.Name }}
