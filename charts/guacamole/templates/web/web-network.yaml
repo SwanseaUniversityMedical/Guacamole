@@ -19,9 +19,11 @@ spec:
 
   ingress:
     - from:
-        - podSelector:
-            matchLabels:
-              cnpg.io/cluster: {{ include "guacamole.fullname" . }}-controller
+      - podSelector:
+          matchLabels:
+            app: {{ include "guacamole.labels.app" . }}
+            component: controller
+            release: {{ .Release.Name }}
   egress:
     - to:
         - podSelector:
