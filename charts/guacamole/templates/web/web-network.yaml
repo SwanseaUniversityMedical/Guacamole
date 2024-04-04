@@ -25,10 +25,13 @@ spec:
             component: controller
             release: {{ .Release.Name }}
   egress:
-    - to:
-        - podSelector:
-            matchLabels:
-              cnpg.io/cluster: {{ include "guacamole.fullname" . }}-database
+    - {}
+{{/*    - to:*/}}
+{{/*        - podSelector:*/}}
+{{/*            matchLabels:*/}}
+{{/*              app: {{ include "guacamole.labels.app" . }}*/}}
+{{/*              component: database*/}}
+{{/*              release: {{ .Release.Name }}*/}}
 {{/*        - podSelector:*/}}
 {{/*            matchLabels:*/}}
 {{/*              app: {{ include "guacamole.labels.app" . }}*/}}
