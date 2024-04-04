@@ -36,8 +36,3 @@ spec:
               app: {{ include "guacamole.labels.app" . }}
               component: guacd
               release: {{ .Release.Name }}
-        - podSelector:
-            matchLabels:
-              app: {{ include "guacamole.labels.app" . }}
-              component: controller
-              release: {{ .Release.Name }}
