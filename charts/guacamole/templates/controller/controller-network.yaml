@@ -32,8 +32,8 @@ spec:
 {{/*              release: {{ .Release.Name }}*/}}
   ingress:
     - from:
-        - podSelector:
-            matchLabels:
-              app: {{ include "guacamole.labels.app" . }}
-              component: web
-              release: {{ .Release.Name }}
+        - - podSelector:
+              matchLabels:
+                app: {{ include "guacamole.labels.app" . }}
+                component: web
+                release: {{ .Release.Name }}
