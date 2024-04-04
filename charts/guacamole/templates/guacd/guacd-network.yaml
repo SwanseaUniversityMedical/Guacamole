@@ -19,8 +19,8 @@ spec:
   - Egress
 
   ingress:
-    - from:
-        - {}
+    - {}
+{{/*    - from:*/}}
 {{/*        - podSelector:*/}}
 {{/*            matchLabels:*/}}
 {{/*              app: {{ include "guacamole.labels.app" . }}*/}}
