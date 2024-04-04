@@ -13,8 +13,10 @@ from controller.api import API
 from controller.directory import LDAP
 from controller.sync import sync
 
+
+# TODO Set logging level programmatically
 logging.basicConfig(
-    level=logging.INFO,
+    level=logging.DEBUG,
     format="[%(asctime)s %(levelname)s %(filename)s:%(lineno)s %(funcName)s] %(message)s",
 )
 
