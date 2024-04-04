@@ -18,13 +18,12 @@ spec:
   - Egress
 
   ingress:
-    - {}
-{{/*    - from:*/}}
-{{/*      - podSelector:*/}}
-{{/*          matchLabels:*/}}
-{{/*            app: {{ include "guacamole.labels.app" . }}*/}}
-{{/*            component: controller*/}}
-{{/*            release: {{ .Release.Name }}*/}}
+    - from:
+      - podSelector:
+          matchLabels:
+            app: {{ include "guacamole.labels.app" . }}
+            component: controller
+            release: {{ .Release.Name }}
   egress:
     - {}
 {{/*    - to:*/}}
