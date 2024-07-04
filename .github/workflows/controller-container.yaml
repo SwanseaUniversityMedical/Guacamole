@@ -32,7 +32,7 @@ concurrency:
 
 jobs:
   # Job name must be unique across repo to target
-  # branch protection rules "required checks" properly!
+  # branch protection rules "required checks" properly!!
   controller-container:
     uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-container.yaml@v2.0.1-containers
     with:
