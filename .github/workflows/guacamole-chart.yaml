@@ -20,10 +20,10 @@ on:
       - 'charts/guacamole/**'
 
 permissions:
-  contents: write
-  pull-requests: read
   actions: read
-
+  contents: write
+  pull-requests: write
+  
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   # Needed to generate releases safely
