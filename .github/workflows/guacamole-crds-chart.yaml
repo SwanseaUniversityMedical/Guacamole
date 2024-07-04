@@ -2,10 +2,6 @@ name: Guacamole CRDs Chart
 
 on:
   pull_request:
-    # Ignore PRs on branches specifically intended for other assets
-    branches-ignore:
-      - '*/controller-container*'
-      - '*/guacamole-chart*'
     # Only consider PRs that change files for this asset, including cQi scripts
     paths:
       - '.github/workflows/guacamole-crds-chart.yaml'
@@ -17,8 +13,6 @@ on:
   push:
     # Only release off of release and maintenance branches for this asset
     branches:
-      - 'maintenance/guacamole-crds-chart/[0-9]+.x.x'
-      - 'maintenance/guacamole-crds-chart/[0-9]+.[0-9]+.x'
       - 'main'
     # Only consider pushes that change files for this asset, including ci scripts
     paths:
@@ -26,20 +20,20 @@ on:
       - 'charts/guacamole-crds/**'
 
 permissions:
-  contents: write
-  pull-requests: read
   actions: read
+  contents: write
+  pull-requests: write
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   # Needed to generate releases safely
-  cancel-in-progress: false
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   # Job name must be unique across repo to target
   # branch protection rules "required checks" properly!
   guacamole-crds-chart:
-    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-chart.yaml@v1.3.0-charts
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-chart.yaml@v2.0.3-charts
     with:
       job-name: guacamole-crds-chart
       registry: ${{ vars.HARBOR_REGISTRY }}
@@ -47,13 +41,7 @@ jobs:
       registry-project: ${{ vars.HARBOR_PROJECT }}
       registry-repo: guacamole-crds
       release-tag-format: 'guacamole-crds-chart-${version}'
-      release-branches: |
-        [
-          'maintenance/guacamole-crds-chart/[0-9]+\.([0-9]+|x)\.x',
-          'main'
-        ]
       cosign-public-key: ${{ vars.COSIGN_PUBLIC_KEY }}
-      slack-channel: ${{ vars.SLACK_CHANNEL }}
       chart: charts/guacamole-crds
       test-command: |
         helm template $CHART --debug
@@ -62,4 +50,3 @@ jobs:
       cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
       cosign-password: ${{ secrets.COSIGN_PASSWORD }}
       registry-token: ${{ secrets.HARBOR_TOKEN }}
-      slack-token: ${{ secrets.SLACK_TOKEN }}
