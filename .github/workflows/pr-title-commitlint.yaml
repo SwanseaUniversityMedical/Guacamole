@@ -16,4 +16,4 @@ concurrency:
 
 jobs:
   pr-title-commitlint:
-    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-title-commitlint.yaml@v1.4.2-pr-title-commitlint
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-title-commitlint.yaml@v1.4.3-pr-title-commitlint
