@@ -25,9 +25,9 @@ module.exports = {
   // requests for dependencies unless they override the schedule.
   updateNotScheduled: false,
   timezone: "Europe/London",
+  //after 10pm and before 5am every weekday
   schedule: [
-    "after 10pm",
-    "before 5am"
+    "* 22-23,0-4 * * 1-5"
   ],
 
   // This setting helps handle breaking changes to Renovate bot when its version changes.
