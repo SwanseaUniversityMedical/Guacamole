@@ -1,6 +1,6 @@
 click==8.1.7
 attrs==23.2.0
-SQLAlchemy==2.0.27
+SQLAlchemy==2.0.41
 psycopg2-binary==2.9.9
 ldap3==2.9.1
 ldap-filter==0.2.2
