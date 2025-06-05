@@ -44,7 +44,7 @@ controller:
 
   image:
     repository: harbor.ukserp.ac.uk/guacamole/controller
-    tag: 1.0.0
+    tag: 1.4.0
     pullPolicy: IfNotPresent
     pullSecret: ""
     uid: 1001
