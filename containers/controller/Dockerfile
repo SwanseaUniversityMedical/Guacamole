@@ -1,4 +1,4 @@
-FROM alpine:3.19
+FROM alpine:3.22
 
 COPY src/requirements.txt /opt/requirements.txt
 
