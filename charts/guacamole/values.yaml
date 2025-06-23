@@ -116,7 +116,7 @@ web:
 
   image:
     repository: guacamole/guacamole
-    tag: 1.5.3
+    tag: 1.6.0
     pullPolicy: IfNotPresent
     pullSecret: ""
     uid: 1001
