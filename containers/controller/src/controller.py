@@ -2,6 +2,7 @@ import logging
 import time
 
 import kubernetes as k8s
+import kopf
 import click
 
 from controller.database import (
@@ -255,14 +256,16 @@ def main(
     logging.info("Load kube config")
     k8s.config.load_incluster_config()
 
-    while True:
+    @kopf.on.create('GuacamoleConnection')
+    @kopf.on.update('GuacamoleConnection')
+    @kopf.on.resume('GuacamoleConnection')
+    @kopf.on.delete('GuacamoleConnection')
+    def sync_on_event(spec):
         sync(
             kube_namespace=kube_namespace,
             ldap=ldap,
             api=api
         )
-
-        time.sleep(30)
 
     logging.info("Halting")
 
