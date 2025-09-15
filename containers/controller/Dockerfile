@@ -13,5 +13,5 @@ RUN apk update && \
 
 COPY src/ /opt/
 
-ENTRYPOINT ["python3", "/opt/controller.py"]
+ENTRYPOINT ["kopf run", "/opt/controller.py"]
 #CMD ["--help"]
