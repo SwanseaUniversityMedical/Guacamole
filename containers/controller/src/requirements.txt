@@ -6,3 +6,4 @@ ldap3==2.9.1
 ldap-filter==0.2.2
 requests==2.31.0
 kubernetes==29.0.0
+kopf==1.38.0
