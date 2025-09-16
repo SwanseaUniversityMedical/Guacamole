@@ -9,7 +9,7 @@ RUN apk update && \
     pyclean -v /usr && \
     pyclean -v ~/ && \
     pip uninstall --break-system-packages -y pyclean && \
-    rm -rf /var/cache/apk/* \
+    rm -rf /var/cache/apk/*
 
 RUN pip install --break-system-packages -r /opt/requirements.txt
 
