@@ -13,6 +13,6 @@ RUN apk update && \
 
 COPY src/ /opt/
 
-ENTRYPOINT ["kopf", "run /opt/controller.py"]
+ENTRYPOINT ["kopf run /opt/controller.py"]
 #CMD ["--help"]
 #ENV PATH "$PATH:/new/path"
