@@ -11,9 +11,10 @@ RUN apk update && \
     pip uninstall -y pyclean && \
     rm -rf /var/cache/apk/* \
 
-#ENV PATH "$PATH:/new/path"
+
 
 COPY src/ /opt/
 
 ENTRYPOINT ["kopf run", "/opt/controller.py"]
 #CMD ["--help"]
+#ENV PATH "$PATH:/new/path"
