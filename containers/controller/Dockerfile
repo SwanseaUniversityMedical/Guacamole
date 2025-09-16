@@ -11,10 +11,8 @@ RUN apk update && \
     pip uninstall --break-system-packages -y pyclean && \
     rm -rf /var/cache/apk/*
 
-RUN pip install --break-system-packages -r /opt/requirements.txt
-
 COPY src/ /opt/
 
-ENTRYPOINT ["kopf run", "/opt/controller.py"]
+ENTRYPOINT ["kopf", "run /opt/controller.py"]
 #CMD ["--help"]
 #ENV PATH "$PATH:/new/path"
