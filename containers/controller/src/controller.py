@@ -255,7 +255,7 @@ def main(
 
     logging.info("Load kube config")
     k8s.config.load_incluster_config()
-    kopf.login_with_kubeconfig()
+    kopf.login_via_client()
 
     @kopf.on.create('GuacamoleConnection')
     @kopf.on.update('GuacamoleConnection')
