@@ -263,11 +263,11 @@ def main(
     @kopf.on.delete('GuacamoleConnection')
     def sync_on_event(spec):
         print("Syncing")
-        # sync(
-        #     kube_namespace=kube_namespace,
-        #     ldap=ldap,
-        #     api=api
-        # )
+        sync(
+            kube_namespace=kube_namespace,
+            ldap=ldap,
+            api=api
+        )
 
     logging.info("Halting")
 
