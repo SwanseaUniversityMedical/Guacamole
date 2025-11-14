@@ -1,0 +1,29 @@
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: {{ include "guacamole.fullname" . }}-guacd
+  labels:
+    app: {{ include "guacamole.labels.app" . }}
+    chart: {{ include "guacamole.labels.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  podSelector:
+    matchLabels:
+      matchLabels:
+      app: {{ include "guacamole.labels.app" . }}
+      component: guacd
+      release: {{ .Release.Name }}
+  policyTypes:
+  - Ingress
+  - Egress
+
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: {{ include "guacamole.labels.app" . }}
+              component: web
+              release: {{ .Release.Name }}
+  egress:
+    - {}
