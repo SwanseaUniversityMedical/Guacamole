@@ -8,7 +8,7 @@ on:
       - '*/guacamole-crds-chart*'
     # Only consider PRs that change files for this asset, including ci scripts
     paths:
-      - '.github/workflows/flake8.yaml'
+      - '.github/workflows/controller-flake8.yaml'
       - '.github/workflows/controller-container.yaml'
       - 'containers/controller/**'
     # Make sure all workflows that are "required checks" for a given
