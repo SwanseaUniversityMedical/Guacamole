@@ -26,4 +26,4 @@ jobs:
     uses: SwanseaUniversityMedical/workflows/.github/workflows/flake8.yaml@v1.0.0-flake8
     with:
       config-file: '.github/.flake8'
-      source-path: 'containers/src/'
+      source-path: './'
