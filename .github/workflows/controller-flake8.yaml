@@ -8,7 +8,7 @@ on:
       - '*/guacamole-crds-chart*'
     # Only consider PRs that change files for this asset, including ci scripts
     paths:
-      - '.github/workflows/flake8.yaml'
+      - '.github/workflows/controller-flake8.yaml'
       - '.github/workflows/controller-container.yaml'
       - 'containers/controller/**'
     # Make sure all workflows that are "required checks" for a given
@@ -23,20 +23,7 @@ concurrency:
 
 jobs:
   controller-flake8:
-    runs-on:
-      labels: [self-hosted, linux, x64]
-      group: light
-    
-    steps:
-      - name: clone repo
-        uses: actions/checkout@v4
-        
-      - name: install flake8
-        run: pip install flake8
-        
-      - name: install flake8 annotations
-        uses: rbialon/flake8-annotations@v1
-          
-      - name: run flake8
-        run: |
-          flake8 --config=".github/.flake8" containers/controller/src
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/flake8.yaml@v1.0.0-flake8
+    with:
+      config-file: '.github/.flake8'
+      source-path: 'containers/controller/src'
