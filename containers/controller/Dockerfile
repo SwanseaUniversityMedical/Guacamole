@@ -11,7 +11,12 @@ RUN apk update && \
     pip uninstall --break-system-packages -y pyclean && \
     rm -rf /var/cache/apk/*
 
+RUN adduser -D -u 1001 -g 1001 controller
+
 COPY src/ /opt/
+
+# Run as the non-root user
+USER 1001
 
 ENTRYPOINT ["kopf", "run", "-A", "/opt/controller.py"]
 #CMD ["--help"]
