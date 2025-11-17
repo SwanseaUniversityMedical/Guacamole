@@ -1,7 +1,5 @@
 import logging
-import os
-from typing import Dict, Any
-import asyncio
+import time
 
 import kubernetes as k8s
 import kopf
@@ -9,143 +7,19 @@ import click
 
 from controller.database import (
     db_connection,
-    db_create_service_user,
-    Database
+    db_create_service_user
 )
+
+from controller.api import API
 from controller.directory import LDAP
 from controller.sync import sync
 
-# Configure logging
+
+# TODO Set logging level programmatically
 logging.basicConfig(
-    level=os.getenv('LOG_LEVEL', 'DEBUG').upper(),
+    level=logging.DEBUG,
     format="[%(asctime)s %(levelname)s %(filename)s:%(lineno)s %(funcName)s] %(message)s",
 )
-
-# Global configuration storage for kopf handlers
-CONTROLLER_CONFIG = {}
-
-
-def get_database_engine():
-    """Get database engine using stored configuration."""
-    config = CONTROLLER_CONFIG
-    return db_connection(
-        hostname=config['postgres_hostname'],
-        port=config['postgres_port'],
-        database=config['postgres_database'],
-        username=config['postgres_username'],
-        password=config['postgres_password']
-    )
-
-
-def get_ldap_client():
-    """Get LDAP client using stored configuration."""
-    config = CONTROLLER_CONFIG
-    return LDAP(
-        hostname=config['ldap_hostname'],
-        port=config['ldap_port'],
-        username=config['ldap_search_bind_dn'],
-        password=config['ldap_search_bind_password'],
-        user_base=config['ldap_user_base_dn'],
-        user_filter=config['ldap_user_search_filter'],
-        username_attribute=config['ldap_username_attribute'],
-        fullname_attribute=config['ldap_fullname_attribute'],
-        email_attribute=config['ldap_email_attribute'],
-        group_base=config['ldap_group_base_dn'],
-        group_filter=config['ldap_group_search_filter'],
-        member_attribute=config['ldap_member_attribute'],
-        paged_size=config['ldap_paged_size'],
-    )
-
-
-def perform_sync():
-    """Perform synchronization using stored configuration."""
-    try:
-        with get_database_engine().connect() as database_client:
-            database = Database(
-                client=database_client,
-                username=CONTROLLER_CONFIG['guacamole_username']
-            )
-            
-            ldap = get_ldap_client()
-            
-            sync(
-                kube_namespace=CONTROLLER_CONFIG['kube_namespace'],
-                ldap=ldap,
-                database=database
-            )
-    except Exception as e:
-        logging.error(f"Sync failed: {e}")
-        raise
-
-
-# Kopf event handlers
-@kopf.on.startup()
-async def startup_handler(settings: kopf.OperatorSettings, **kwargs):
-    """Handle operator startup."""
-    logging.info("Guacamole Controller starting up...")
-    
-    # Configure kopf settings
-    settings.posting.level = logging.INFO
-    settings.watching.connect_timeout = 60
-    settings.watching.server_timeout = 600
-    
-    logging.info("Startup completed successfully")
-
-
-@kopf.on.cleanup()
-async def cleanup_handler(**kwargs):
-    """Handle operator cleanup."""
-    logging.info("Guacamole Controller shutting down...")
-
-
-@kopf.on.create('guacamole.ukserp.ac.uk', 'v1', 'guacamoleconnections')
-@kopf.on.update('guacamole.ukserp.ac.uk', 'v1', 'guacamoleconnections')  
-@kopf.on.resume('guacamole.ukserp.ac.uk', 'v1', 'guacamoleconnections')
-async def handle_connection_event(body, name, namespace, operation, **kwargs):
-    """Handle GuacamoleConnection resource events."""
-    logging.info(f"Handling {operation} event for GuacamoleConnection {namespace}/{name}")
-    
-    try:
-        # Perform sync operation
-        await asyncio.get_event_loop().run_in_executor(None, perform_sync)
-        
-        logging.info(f"Successfully processed {operation} for {namespace}/{name}")
-        return {"message": f"GuacamoleConnection {name} processed successfully"}
-        
-    except Exception as e:
-        logging.error(f"Failed to process {operation} for {namespace}/{name}: {e}")
-        raise kopf.TemporaryError(f"Sync failed: {e}", delay=60)
-
-
-@kopf.on.delete('guacamole.ukserp.ac.uk', 'v1', 'guacamoleconnections')
-async def handle_connection_deletion(body, name, namespace, **kwargs):
-    """Handle GuacamoleConnection resource deletion."""
-    logging.info(f"Handling deletion event for GuacamoleConnection {namespace}/{name}")
-    
-    try:
-        # Perform sync operation (which will remove orphaned connections)
-        await asyncio.get_event_loop().run_in_executor(None, perform_sync)
-        
-        logging.info(f"Successfully processed deletion for {namespace}/{name}")
-        return {"message": f"GuacamoleConnection {name} deletion processed successfully"}
-        
-    except Exception as e:
-        logging.error(f"Failed to process deletion for {namespace}/{name}: {e}")
-        raise kopf.TemporaryError(f"Deletion sync failed: {e}", delay=60)
-
-
-@kopf.timer('guacamole.ukserp.ac.uk', 'v1', 'guacamoleconnections', interval=300)
-async def periodic_sync(body, name, namespace, **kwargs):
-    """Perform periodic synchronization every 5 minutes."""
-    logging.debug(f"Periodic sync for GuacamoleConnection {namespace}/{name}")
-    
-    try:
-        await asyncio.get_event_loop().run_in_executor(None, perform_sync)
-        logging.debug(f"Periodic sync completed for {namespace}/{name}")
-        
-    except Exception as e:
-        logging.warning(f"Periodic sync failed for {namespace}/{name}: {e}")
-        # Don't raise here as periodic sync failures shouldn't stop the operator
 
 
 @click.command()
@@ -182,6 +56,20 @@ async def periodic_sync(body, name, namespace, **kwargs):
     type=str,
     required=True,
     help="Auth password for the postgres client.",
+    show_default=True
+)
+@click.option(
+    "--guacamole-hostname",
+    type=str,
+    required=True,
+    help="Url to the guacamole api.",
+    show_default=True
+)
+@click.option(
+    "--guacamole-port",
+    type=int,
+    required=True,
+    help="Port for the guacamole api.",
     show_default=True
 )
 @click.option(
@@ -302,6 +190,8 @@ def main(
     postgres_database: str,
     postgres_username: str,
     postgres_password: str,
+    guacamole_hostname: str,
+    guacamole_port: int,
     guacamole_username: str,
     guacamole_password: str,
     ldap_hostname: str,
@@ -319,78 +209,67 @@ def main(
     ldap_paged_size: int,
     kube_namespace: str
 ):
-    """Main function that stores configuration and starts the kopf operator."""
-    global CONTROLLER_CONFIG
-    
     logging.info(f"running {__file__}")
-    
-    # Store configuration in global variable for kopf handlers
-    CONTROLLER_CONFIG = {
-        'postgres_hostname': postgres_hostname,
-        'postgres_port': postgres_port,
-        'postgres_database': postgres_database,
-        'postgres_username': postgres_username,
-        'postgres_password': postgres_password,
-        'guacamole_username': guacamole_username,
-        'guacamole_password': guacamole_password,
-        'ldap_hostname': ldap_hostname,
-        'ldap_port': ldap_port,
-        'ldap_user_base_dn': ldap_user_base_dn,
-        'ldap_user_search_filter': ldap_user_search_filter,
-        'ldap_username_attribute': ldap_username_attribute,
-        'ldap_fullname_attribute': ldap_fullname_attribute,
-        'ldap_email_attribute': ldap_email_attribute,
-        'ldap_group_base_dn': ldap_group_base_dn,
-        'ldap_group_search_filter': ldap_group_search_filter,
-        'ldap_member_attribute': ldap_member_attribute,
-        'ldap_search_bind_dn': ldap_search_bind_dn,
-        'ldap_search_bind_password': ldap_search_bind_password,
-        'ldap_paged_size': ldap_paged_size,
-        'kube_namespace': kube_namespace,
-    }
 
-    logging.info("Initialize database service user")
-    database_engine = db_connection(
+    logging.info("Connect to database")
+    with db_connection(
         hostname=postgres_hostname,
         port=postgres_port,
         database=postgres_database,
         username=postgres_username,
         password=postgres_password
-    )
-    
-    with database_engine.begin() as database_client:
+    ).begin() as database_client:
+
+        logging.info("Create service user in database")
         db_create_service_user(
             client=database_client,
             username=guacamole_username,
             password=guacamole_password
         )
 
-    logging.info("Test LDAP connection")
-    try:
-        ldap_test = LDAP(
-            hostname=ldap_hostname,
-            port=ldap_port,
-            username=ldap_search_bind_dn,
-            password=ldap_search_bind_password,
-            user_base=ldap_user_base_dn,
-            user_filter=ldap_user_search_filter,
-            username_attribute=ldap_username_attribute,
-            fullname_attribute=ldap_fullname_attribute,
-            email_attribute=ldap_email_attribute,
-            group_base=ldap_group_base_dn,
-            group_filter=ldap_group_search_filter,
-            member_attribute=ldap_member_attribute,
-            paged_size=ldap_paged_size,
-        )
-        # Test the connection by accessing a simple attribute
-        _ = ldap_test.hostname
-        logging.info("LDAP connection test successful")
-    except Exception as e:
-        logging.warning(f"LDAP connection test failed: {e}")
+    logging.info("Authenticate with rest api as service user")
+    api = API(
+        hostname=guacamole_hostname,
+        port=guacamole_port,
+        username=guacamole_username,
+        password=guacamole_password,
+        data_source="postgresql"
+    )
 
-    logging.info("Starting kopf operator...")
-    # Run the kopf operator
-    kopf.run()
+    logging.info("Authenticate with ldap as search bind")
+    ldap = LDAP(
+        hostname=ldap_hostname,
+        port=ldap_port,
+        username=ldap_search_bind_dn,
+        password=ldap_search_bind_password,
+        user_base=ldap_user_base_dn,
+        user_filter=ldap_user_search_filter,
+        username_attribute=ldap_username_attribute,
+        fullname_attribute=ldap_fullname_attribute,
+        email_attribute=ldap_email_attribute,
+        group_base=ldap_group_base_dn,
+        group_filter=ldap_group_search_filter,
+        member_attribute=ldap_member_attribute,
+        paged_size=ldap_paged_size,
+    )
+
+    logging.info("Load kube config")
+    k8s.config.load_incluster_config()
+    kopf.login_via_client()
+
+    @kopf.on.create('GuacamoleConnection')
+    @kopf.on.update('GuacamoleConnection')
+    @kopf.on.resume('GuacamoleConnection')
+    @kopf.on.delete('GuacamoleConnection')
+    def sync_on_event(spec):
+        print("Syncing")
+        sync(
+            kube_namespace=kube_namespace,
+            ldap=ldap,
+            api=api
+        )
+
+    logging.info("Halting")
 
 
 if __name__ == "__main__":
