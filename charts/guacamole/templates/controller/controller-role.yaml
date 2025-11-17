@@ -1,8 +1,24 @@
 apiVersion: rbac.authorization.k8s.io/v1
-kind: Role
+kind: ClusterRole
 metadata:
   name: {{ include "guacamole.fullname" . }}-controller
 rules:
+  # Permissions for managing GuacamoleConnection CRDs cluster-wide
   - apiGroups: ["guacamole.ukserp.ac.uk"]
     resources: ["guacamoleconnections"]
-    verbs: ["get", "watch", "list"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Permissions for managing secrets (needed for database operations)
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Permissions for kopf operator framework
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "update", "patch"]
+  - apiGroups: ["coordination.k8s.io"]
+    resources: ["leases"]
+    verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+  # Permissions for kopf to manage operator state
+  - apiGroups: [""]
+    resources: ["namespaces"]
+    verbs: ["get", "list", "watch"]
