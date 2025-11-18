@@ -49,7 +49,7 @@ def load_configuration_from_env():
         'ldap_member_attribute': os.getenv('CONTROLLER_LDAP_MEMBER_ATTRIBUTE'),
         'ldap_search_bind_dn': os.getenv('CONTROLLER_LDAP_SEARCH_BIND_DN'),
         'ldap_search_bind_password': os.getenv('CONTROLLER_LDAP_SEARCH_BIND_PASSWORD'),
-        'ldap_paged_size': int(os.getenv('CONTROLLER_LDAP_PAGED_SIZE', '100')),
+        'ldap_paged_size': int(os.getenv('CONTROLLER_LDAP_PAGED_SIZE', 100)),
         
         # Kubernetes configuration
         'kube_namespace': os.getenv('CONTROLLER_KUBE_NAMESPACE'),
