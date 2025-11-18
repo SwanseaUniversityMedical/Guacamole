@@ -28,6 +28,15 @@ CONTROLLER_CONFIG = {}
 def get_database_engine():
     """Get database engine using stored configuration."""
     config = CONTROLLER_CONFIG
+    
+    # Check if configuration is available
+    required_keys = ['postgres_hostname', 'postgres_port', 'postgres_database', 
+                     'postgres_username', 'postgres_password']
+    
+    for key in required_keys:
+        if key not in config:
+            raise RuntimeError(f"Controller configuration not initialized: missing {key}")
+    
     return db_connection(
         hostname=config['postgres_hostname'],
         port=config['postgres_port'],
@@ -40,6 +49,19 @@ def get_database_engine():
 def get_ldap_client():
     """Get LDAP client using stored configuration."""
     config = CONTROLLER_CONFIG
+    
+    # Check if configuration is available
+    required_keys = ['ldap_hostname', 'ldap_port', 'ldap_search_bind_dn', 
+                     'ldap_search_bind_password', 'ldap_user_base_dn',
+                     'ldap_user_search_filter', 'ldap_username_attribute',
+                     'ldap_fullname_attribute', 'ldap_email_attribute',
+                     'ldap_group_base_dn', 'ldap_group_search_filter',
+                     'ldap_member_attribute', 'ldap_paged_size']
+    
+    for key in required_keys:
+        if key not in config:
+            raise RuntimeError(f"Controller configuration not initialized: missing {key}")
+    
     return LDAP(
         hostname=config['ldap_hostname'],
         port=config['ldap_port'],
@@ -104,14 +126,25 @@ async def cleanup_handler(**kwargs):
 async def handle_connection_event(body, name, namespace, param, **kwargs):
     """Handle GuacamoleConnection resource events."""
     logging.info(f"Handling {param} event for GuacamoleConnection {namespace}/{name}")
-    
+
     try:
+        # Check if configuration is available
+        if not CONTROLLER_CONFIG:
+            logging.warning(f"Controller configuration not yet initialized, delaying {param} processing for {namespace}/{name}")
+            raise kopf.TemporaryError("Controller configuration not yet initialized", delay=30)
+        
         # Perform sync operation
         await asyncio.get_event_loop().run_in_executor(None, perform_sync)
-        
+
         logging.info(f"Successfully processed {param} for {namespace}/{name}")
         return {"message": f"GuacamoleConnection {name} processed successfully"}
         
+    except RuntimeError as e:
+        if "Controller configuration not initialized" in str(e):
+            logging.warning(f"Configuration not ready for {param} processing of {namespace}/{name}: {e}")
+            raise kopf.TemporaryError(f"Configuration not ready: {e}", delay=30)
+        else:
+            raise
     except Exception as e:
         logging.error(f"Failed to process {param} for {namespace}/{name}: {e}")
         raise kopf.TemporaryError(f"Sync failed: {e}", delay=60)
@@ -123,12 +156,23 @@ async def handle_connection_deletion(body, name, namespace, **kwargs):
     logging.info(f"Handling deletion event for GuacamoleConnection {namespace}/{name}")
     
     try:
+        # Check if configuration is available
+        if not CONTROLLER_CONFIG:
+            logging.warning(f"Controller configuration not yet initialized, delaying deletion processing for {namespace}/{name}")
+            raise kopf.TemporaryError("Controller configuration not yet initialized", delay=30)
+        
         # Perform sync operation (which will remove orphaned connections)
         await asyncio.get_event_loop().run_in_executor(None, perform_sync)
         
         logging.info(f"Successfully processed deletion for {namespace}/{name}")
         return {"message": f"GuacamoleConnection {name} deletion processed successfully"}
         
+    except RuntimeError as e:
+        if "Controller configuration not initialized" in str(e):
+            logging.warning(f"Configuration not ready for deletion processing of {namespace}/{name}: {e}")
+            raise kopf.TemporaryError(f"Configuration not ready: {e}", delay=30)
+        else:
+            raise
     except Exception as e:
         logging.error(f"Failed to process deletion for {namespace}/{name}: {e}")
         raise kopf.TemporaryError(f"Deletion sync failed: {e}", delay=60)
