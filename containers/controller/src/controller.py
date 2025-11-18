@@ -24,12 +24,24 @@ logging.basicConfig(
 CONTROLLER_CONFIG = {}
 
 
+def get_env_int(key: str, default: int) -> int:
+    """Safely get an integer environment variable with a default value."""
+    value = os.getenv(key)
+    if value is None or value.strip() == '':
+        return default
+    try:
+        return int(value)
+    except ValueError:
+        logging.warning(f"Invalid integer value for {key}: '{value}', using default {default}")
+        return default
+
+
 def load_configuration_from_env():
     """Load configuration from environment variables."""
     config = {
         # Database configuration
         'postgres_hostname': os.getenv('CONTROLLER_POSTGRES_HOSTNAME'),
-        'postgres_port': int(os.getenv('CONTROLLER_POSTGRES_PORT', '5432')),
+        'postgres_port': get_env_int('CONTROLLER_POSTGRES_PORT', 5432),
         'postgres_database': os.getenv('CONTROLLER_POSTGRES_DATABASE'),
         'postgres_username': os.getenv('CONTROLLER_POSTGRES_USERNAME'),
         'postgres_password': os.getenv('CONTROLLER_POSTGRES_PASSWORD'),
@@ -38,7 +50,7 @@ def load_configuration_from_env():
         
         # LDAP configuration
         'ldap_hostname': os.getenv('CONTROLLER_LDAP_HOSTNAME'),
-        'ldap_port': int(os.getenv('CONTROLLER_LDAP_PORT', 389)),
+        'ldap_port': get_env_int('CONTROLLER_LDAP_PORT', 389),
         'ldap_user_base_dn': os.getenv('CONTROLLER_LDAP_USER_BASE_DN'),
         'ldap_user_search_filter': os.getenv('CONTROLLER_LDAP_USER_SEARCH_FILTER'),
         'ldap_username_attribute': os.getenv('CONTROLLER_LDAP_USERNAME_ATTRIBUTE'),
@@ -49,7 +61,7 @@ def load_configuration_from_env():
         'ldap_member_attribute': os.getenv('CONTROLLER_LDAP_MEMBER_ATTRIBUTE'),
         'ldap_search_bind_dn': os.getenv('CONTROLLER_LDAP_SEARCH_BIND_DN'),
         'ldap_search_bind_password': os.getenv('CONTROLLER_LDAP_SEARCH_BIND_PASSWORD'),
-        'ldap_paged_size': int(os.getenv('CONTROLLER_LDAP_PAGED_SIZE', 100)),
+        'ldap_paged_size': get_env_int('CONTROLLER_LDAP_PAGED_SIZE', 100),
         
         # Kubernetes configuration
         'kube_namespace': os.getenv('CONTROLLER_KUBE_NAMESPACE'),
