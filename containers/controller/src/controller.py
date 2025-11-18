@@ -98,22 +98,22 @@ async def cleanup_handler(**kwargs):
     logging.info("Guacamole Controller shutting down...")
 
 
-@kopf.on.create('guacamole.ukserp.ac.uk', 'v1', 'guacamoleconnections')
-@kopf.on.update('guacamole.ukserp.ac.uk', 'v1', 'guacamoleconnections')  
-@kopf.on.resume('guacamole.ukserp.ac.uk', 'v1', 'guacamoleconnections')
-async def handle_connection_event(body, name, namespace, operation, **kwargs):
+@kopf.on.create('guacamole.ukserp.ac.uk', 'v1', 'guacamoleconnections', param="create")
+@kopf.on.update('guacamole.ukserp.ac.uk', 'v1', 'guacamoleconnections', param="update")
+@kopf.on.resume('guacamole.ukserp.ac.uk', 'v1', 'guacamoleconnections', param="resume")
+async def handle_connection_event(body, name, namespace, param, **kwargs):
     """Handle GuacamoleConnection resource events."""
-    logging.info(f"Handling {operation} event for GuacamoleConnection {namespace}/{name}")
+    logging.info(f"Handling {param} event for GuacamoleConnection {namespace}/{name}")
     
     try:
         # Perform sync operation
         await asyncio.get_event_loop().run_in_executor(None, perform_sync)
         
-        logging.info(f"Successfully processed {operation} for {namespace}/{name}")
+        logging.info(f"Successfully processed {param} for {namespace}/{name}")
         return {"message": f"GuacamoleConnection {name} processed successfully"}
         
     except Exception as e:
-        logging.error(f"Failed to process {operation} for {namespace}/{name}: {e}")
+        logging.error(f"Failed to process {param} for {namespace}/{name}: {e}")
         raise kopf.TemporaryError(f"Sync failed: {e}", delay=60)
 
 
