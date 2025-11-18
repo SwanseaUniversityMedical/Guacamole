@@ -38,7 +38,7 @@ def load_configuration_from_env():
         
         # LDAP configuration
         'ldap_hostname': os.getenv('CONTROLLER_LDAP_HOSTNAME'),
-        'ldap_port': int(os.getenv('CONTROLLER_LDAP_PORT', '389')),
+        'ldap_port': int(os.getenv('CONTROLLER_LDAP_PORT', 389)),
         'ldap_user_base_dn': os.getenv('CONTROLLER_LDAP_USER_BASE_DN'),
         'ldap_user_search_filter': os.getenv('CONTROLLER_LDAP_USER_SEARCH_FILTER'),
         'ldap_username_attribute': os.getenv('CONTROLLER_LDAP_USERNAME_ATTRIBUTE'),
