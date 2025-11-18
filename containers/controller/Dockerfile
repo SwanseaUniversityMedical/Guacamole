@@ -18,6 +18,6 @@ COPY src/ /opt/
 # Run as the non-root user
 USER 1001
 
-ENTRYPOINT ["kopf", "run", "-A", "/opt/controller.py"]
+ENTRYPOINT ["python3", "/opt/controller.py"]
 #CMD ["--help"]
 #ENV PATH "$PATH:/new/path"

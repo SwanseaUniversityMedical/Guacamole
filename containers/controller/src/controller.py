@@ -5,7 +5,6 @@ import asyncio
 
 import kubernetes as k8s
 import kopf
-import click
 
 from controller.database import (
     db_connection,
@@ -21,8 +20,56 @@ logging.basicConfig(
     format="[%(asctime)s %(levelname)s %(filename)s:%(lineno)s %(funcName)s] %(message)s",
 )
 
-# Global configuration storage for kopf handlers
+# Global configuration storage - populated from environment variables
 CONTROLLER_CONFIG = {}
+
+
+def load_configuration_from_env():
+    """Load configuration from environment variables."""
+    config = {
+        # Database configuration
+        'postgres_hostname': os.getenv('CONTROLLER_POSTGRES_HOSTNAME'),
+        'postgres_port': int(os.getenv('CONTROLLER_POSTGRES_PORT', '5432')),
+        'postgres_database': os.getenv('CONTROLLER_POSTGRES_DATABASE'),
+        'postgres_username': os.getenv('CONTROLLER_POSTGRES_USERNAME'),
+        'postgres_password': os.getenv('CONTROLLER_POSTGRES_PASSWORD'),
+        'guacamole_username': os.getenv('CONTROLLER_GUACAMOLE_USERNAME'),
+        'guacamole_password': os.getenv('CONTROLLER_GUACAMOLE_PASSWORD'),
+        
+        # LDAP configuration
+        'ldap_hostname': os.getenv('CONTROLLER_LDAP_HOSTNAME'),
+        'ldap_port': int(os.getenv('CONTROLLER_LDAP_PORT', '389')),
+        'ldap_user_base_dn': os.getenv('CONTROLLER_LDAP_USER_BASE_DN'),
+        'ldap_user_search_filter': os.getenv('CONTROLLER_LDAP_USER_SEARCH_FILTER'),
+        'ldap_username_attribute': os.getenv('CONTROLLER_LDAP_USERNAME_ATTRIBUTE'),
+        'ldap_fullname_attribute': os.getenv('CONTROLLER_LDAP_FULLNAME_ATTRIBUTE'),
+        'ldap_email_attribute': os.getenv('CONTROLLER_LDAP_EMAIL_ATTRIBUTE'),
+        'ldap_group_base_dn': os.getenv('CONTROLLER_LDAP_GROUP_BASE_DN'),
+        'ldap_group_search_filter': os.getenv('CONTROLLER_LDAP_GROUP_SEARCH_FILTER'),
+        'ldap_member_attribute': os.getenv('CONTROLLER_LDAP_MEMBER_ATTRIBUTE'),
+        'ldap_search_bind_dn': os.getenv('CONTROLLER_LDAP_SEARCH_BIND_DN'),
+        'ldap_search_bind_password': os.getenv('CONTROLLER_LDAP_SEARCH_BIND_PASSWORD'),
+        'ldap_paged_size': int(os.getenv('CONTROLLER_LDAP_PAGED_SIZE', '100')),
+        
+        # Kubernetes configuration
+        'kube_namespace': os.getenv('CONTROLLER_KUBE_NAMESPACE'),
+    }
+    
+    # Validate required configuration
+    required_keys = [
+        'postgres_hostname', 'postgres_database', 'postgres_username', 'postgres_password',
+        'guacamole_username', 'guacamole_password',
+        'ldap_hostname', 'ldap_user_base_dn', 'ldap_user_search_filter',
+        'ldap_username_attribute', 'ldap_fullname_attribute', 'ldap_email_attribute',
+        'ldap_group_base_dn', 'ldap_group_search_filter', 'ldap_member_attribute',
+        'ldap_search_bind_dn', 'ldap_search_bind_password', 'kube_namespace'
+    ]
+    
+    missing_keys = [key for key in required_keys if not config.get(key)]
+    if missing_keys:
+        raise RuntimeError(f"Missing required environment variables: {missing_keys}")
+    
+    return config
 
 
 def get_database_engine():
@@ -103,7 +150,9 @@ def perform_sync():
 # Kopf event handlers
 @kopf.on.startup()
 async def startup_handler(settings: kopf.OperatorSettings, **kwargs):
-    """Handle operator startup."""
+    """Handle operator startup and initialization."""
+    global CONTROLLER_CONFIG
+    
     logging.info("Guacamole Controller starting up...")
     
     # Configure kopf settings
@@ -111,7 +160,38 @@ async def startup_handler(settings: kopf.OperatorSettings, **kwargs):
     settings.watching.connect_timeout = 60
     settings.watching.server_timeout = 600
     
-    logging.info("Startup completed successfully")
+    try:
+        # Load configuration from environment variables
+        logging.info("Loading configuration from environment variables...")
+        CONTROLLER_CONFIG = load_configuration_from_env()
+        logging.info("Configuration loaded successfully")
+        
+        # Initialize database service user
+        logging.info("Initializing database service user...")
+        database_engine = get_database_engine()
+        with database_engine.begin() as database_client:
+            db_create_service_user(
+                client=database_client,
+                username=CONTROLLER_CONFIG['guacamole_username'],
+                password=CONTROLLER_CONFIG['guacamole_password']
+            )
+        logging.info("Database service user initialized")
+        
+        # Test LDAP connection
+        logging.info("Testing LDAP connection...")
+        try:
+            ldap_test = get_ldap_client()
+            # Test the connection by accessing a simple attribute
+            _ = ldap_test.hostname
+            logging.info("LDAP connection test successful")
+        except Exception as e:
+            logging.warning(f"LDAP connection test failed: {e}")
+        
+        logging.info("Startup completed successfully")
+        
+    except Exception as e:
+        logging.error(f"Startup failed: {e}")
+        raise
 
 
 @kopf.on.cleanup()
@@ -128,23 +208,12 @@ async def handle_connection_event(body, name, namespace, param, **kwargs):
     logging.info(f"Handling {param} event for GuacamoleConnection {namespace}/{name}")
 
     try:
-        # Check if configuration is available
-        if not CONTROLLER_CONFIG:
-            logging.warning(f"Controller configuration not yet initialized, delaying {param} processing for {namespace}/{name}")
-            raise kopf.TemporaryError("Controller configuration not yet initialized", delay=30)
-        
-        # Perform sync operation
+        # Perform sync operation (configuration is guaranteed to be available from startup)
         await asyncio.get_event_loop().run_in_executor(None, perform_sync)
 
         logging.info(f"Successfully processed {param} for {namespace}/{name}")
         return {"message": f"GuacamoleConnection {name} processed successfully"}
-        
-    except RuntimeError as e:
-        if "Controller configuration not initialized" in str(e):
-            logging.warning(f"Configuration not ready for {param} processing of {namespace}/{name}: {e}")
-            raise kopf.TemporaryError(f"Configuration not ready: {e}", delay=30)
-        else:
-            raise
+
     except Exception as e:
         logging.error(f"Failed to process {param} for {namespace}/{name}: {e}")
         raise kopf.TemporaryError(f"Sync failed: {e}", delay=60)
@@ -156,23 +225,13 @@ async def handle_connection_deletion(body, name, namespace, **kwargs):
     logging.info(f"Handling deletion event for GuacamoleConnection {namespace}/{name}")
     
     try:
-        # Check if configuration is available
-        if not CONTROLLER_CONFIG:
-            logging.warning(f"Controller configuration not yet initialized, delaying deletion processing for {namespace}/{name}")
-            raise kopf.TemporaryError("Controller configuration not yet initialized", delay=30)
-        
         # Perform sync operation (which will remove orphaned connections)
+        # Configuration is guaranteed to be available from startup
         await asyncio.get_event_loop().run_in_executor(None, perform_sync)
         
         logging.info(f"Successfully processed deletion for {namespace}/{name}")
         return {"message": f"GuacamoleConnection {name} deletion processed successfully"}
         
-    except RuntimeError as e:
-        if "Controller configuration not initialized" in str(e):
-            logging.warning(f"Configuration not ready for deletion processing of {namespace}/{name}: {e}")
-            raise kopf.TemporaryError(f"Configuration not ready: {e}", delay=30)
-        else:
-            raise
     except Exception as e:
         logging.error(f"Failed to process deletion for {namespace}/{name}: {e}")
         raise kopf.TemporaryError(f"Deletion sync failed: {e}", delay=60)
@@ -192,250 +251,13 @@ async def periodic_sync(body, name, namespace, **kwargs):
         # Don't raise here as periodic sync failures shouldn't stop the operator
 
 
-@click.command()
-@click.option(
-    "--postgres-hostname",
-    type=str,
-    required=True,
-    help="Url to the postgres client.",
-    show_default=True
-)
-@click.option(
-    "--postgres-port",
-    type=int,
-    required=True,
-    help="Port for the postgres client.",
-    show_default=True
-)
-@click.option(
-    "--postgres-database",
-    type=str,
-    required=True,
-    help="Name of the postgres database.",
-    show_default=True
-)
-@click.option(
-    "--postgres-username",
-    type=str,
-    required=True,
-    help="Auth username for the postgres client.",
-    show_default=True
-)
-@click.option(
-    "--postgres-password",
-    type=str,
-    required=True,
-    help="Auth password for the postgres client.",
-    show_default=True
-)
-@click.option(
-    "--guacamole-username",
-    type=str,
-    required=True,
-    help="Auth username for the guacamole controller account.",
-    show_default=True
-)
-@click.option(
-    "--guacamole-password",
-    type=str,
-    required=True,
-    help="Auth password for the guacamole controller account.",
-    show_default=True
-)
-@click.option(
-    "--ldap-hostname",
-    type=str,
-    required=True,
-    help="Url to the ldap server.",
-    show_default=True
-)
-@click.option(
-    "--ldap-port",
-    type=int,
-    required=True,
-    help="Port for the ldap server.",
-    show_default=True
-)
-@click.option(
-    "--ldap-user-base-dn",
-    type=str,
-    required=True,
-    help="LDAP base dn for valid users.",
-    show_default=True
-)
-@click.option(
-    "--ldap-group-base-dn",
-    type=str,
-    required=True,
-    help="LDAP base dn for valid groups.",
-    show_default=True
-)
-@click.option(
-    "--ldap-username-attribute",
-    type=str,
-    required=True,
-    help="LDAP username attribute of the user records.",
-    show_default=True
-)
-@click.option(
-    "--ldap-fullname-attribute",
-    type=str,
-    required=True,
-    help="LDAP fullname attribute of the user records.",
-    show_default=True
-)
-@click.option(
-    "--ldap-email-attribute",
-    type=str,
-    required=True,
-    help="LDAP email attribute of the user records.",
-    show_default=True
-)
-@click.option(
-    "--ldap-member-attribute",
-    type=str,
-    required=True,
-    help="LDAP member attribute for querying membership.",
-    show_default=True
-)
-@click.option(
-    "--ldap-user-search-filter",
-    type=str,
-    required=True,
-    help="LDAP search filter for user records.",
-    show_default=True
-)
-@click.option(
-    "--ldap-group-search-filter",
-    type=str,
-    required=True,
-    help="LDAP search filter for group records.",
-    show_default=True
-)
-@click.option(
-    "--ldap-search-bind-dn",
-    type=str,
-    required=True,
-    help="LDAP username for searching.",
-    show_default=True
-)
-@click.option(
-    "--ldap-search-bind-password",
-    type=str,
-    required=True,
-    help="LDAP password for searching.",
-    show_default=True
-)
-@click.option(
-    "--ldap-paged-size",
-    type=int,
-    required=True,
-    help="Number of results per page to request from the ldap server.",
-    show_default=True
-)
-@click.option(
-    "--kube-namespace",
-    type=str,
-    required=True,
-    help="Namespace for looking for Guacamole CRD instances.",
-    show_default=True
-)
-def main(
-    postgres_hostname: str,
-    postgres_port: int,
-    postgres_database: str,
-    postgres_username: str,
-    postgres_password: str,
-    guacamole_username: str,
-    guacamole_password: str,
-    ldap_hostname: str,
-    ldap_port: int,
-    ldap_user_base_dn: str,
-    ldap_user_search_filter: str,
-    ldap_username_attribute: str,
-    ldap_fullname_attribute: str,
-    ldap_email_attribute: str,
-    ldap_group_base_dn: str,
-    ldap_group_search_filter: str,
-    ldap_member_attribute: str,
-    ldap_search_bind_dn: str,
-    ldap_search_bind_password: str,
-    ldap_paged_size: int,
-    kube_namespace: str
-):
-    """Main function that stores configuration and starts the kopf operator."""
-    global CONTROLLER_CONFIG
+def main():
+    """Main entry point - start the kopf operator."""
+    logging.info(f"Starting Guacamole Controller from {__file__}")
     
-    logging.info(f"running {__file__}")
-    
-    # Store configuration in global variable for kopf handlers
-    CONTROLLER_CONFIG = {
-        'postgres_hostname': postgres_hostname,
-        'postgres_port': postgres_port,
-        'postgres_database': postgres_database,
-        'postgres_username': postgres_username,
-        'postgres_password': postgres_password,
-        'guacamole_username': guacamole_username,
-        'guacamole_password': guacamole_password,
-        'ldap_hostname': ldap_hostname,
-        'ldap_port': ldap_port,
-        'ldap_user_base_dn': ldap_user_base_dn,
-        'ldap_user_search_filter': ldap_user_search_filter,
-        'ldap_username_attribute': ldap_username_attribute,
-        'ldap_fullname_attribute': ldap_fullname_attribute,
-        'ldap_email_attribute': ldap_email_attribute,
-        'ldap_group_base_dn': ldap_group_base_dn,
-        'ldap_group_search_filter': ldap_group_search_filter,
-        'ldap_member_attribute': ldap_member_attribute,
-        'ldap_search_bind_dn': ldap_search_bind_dn,
-        'ldap_search_bind_password': ldap_search_bind_password,
-        'ldap_paged_size': ldap_paged_size,
-        'kube_namespace': kube_namespace,
-    }
-
-    logging.info("Initialize database service user")
-    database_engine = db_connection(
-        hostname=postgres_hostname,
-        port=postgres_port,
-        database=postgres_database,
-        username=postgres_username,
-        password=postgres_password
-    )
-    
-    with database_engine.begin() as database_client:
-        db_create_service_user(
-            client=database_client,
-            username=guacamole_username,
-            password=guacamole_password
-        )
-
-    logging.info("Test LDAP connection")
-    try:
-        ldap_test = LDAP(
-            hostname=ldap_hostname,
-            port=ldap_port,
-            username=ldap_search_bind_dn,
-            password=ldap_search_bind_password,
-            user_base=ldap_user_base_dn,
-            user_filter=ldap_user_search_filter,
-            username_attribute=ldap_username_attribute,
-            fullname_attribute=ldap_fullname_attribute,
-            email_attribute=ldap_email_attribute,
-            group_base=ldap_group_base_dn,
-            group_filter=ldap_group_search_filter,
-            member_attribute=ldap_member_attribute,
-            paged_size=ldap_paged_size,
-        )
-        # Test the connection by accessing a simple attribute
-        _ = ldap_test.hostname
-        logging.info("LDAP connection test successful")
-    except Exception as e:
-        logging.warning(f"LDAP connection test failed: {e}")
-
-    logging.info("Starting kopf operator...")
-    # Run the kopf operator
+    # Run the kopf operator (configuration loaded in startup handler)
     kopf.run()
 
 
 if __name__ == "__main__":
-    main(auto_envvar_prefix='CONTROLLER')
+    main()
