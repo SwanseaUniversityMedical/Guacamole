@@ -13,7 +13,7 @@ def ldap_authenticate_user(
     server = Server(host=hostname, port=port, use_ssl=True, get_info=ALL)
 
     logging.info("binding user")
-    client = Connection(server, user=username, password=password, auto_bind=True)
+    client = Connection(server, user=username, password=password, auto_bind='NONE')
     client.start_tls()
 
     return client
