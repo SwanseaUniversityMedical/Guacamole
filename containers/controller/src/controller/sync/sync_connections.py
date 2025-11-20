@@ -1,19 +1,19 @@
 import logging
 
-from ..api import API
+from ..database import Database
 
 
 def sync_connections(
-    api: API,
+    database: Database,
     manifests: dict,
     expected_users_by_manifest: dict
 ):
     logging.info("Syncing connections")
 
-    observed_connections = api.list_connections()
+    observed_connections = database.list_connections()
     expected_connections = set()
 
-    # Add connections via api
+    # Add connections via database
     for manifest_name, manifest in manifests.items():
 
         name = manifest["metadata"]["name"]
@@ -24,7 +24,7 @@ def sync_connections(
 
         logging.info(f"Syncing connection {conn_name=}")
 
-        conn_id = api.create_or_update_connection(
+        conn_id = database.create_or_update_connection(
             parent="ROOT",
             name=conn_name,
             protocol=conn_protocol,
@@ -36,18 +36,18 @@ def sync_connections(
 
         logging.info(f"Syncing connection users {conn_name=}")
 
-        observed_connection_users = api.list_connection_users(conn_id=conn_id)
+        observed_connection_users = database.list_connection_users(conn_id=conn_id)
 
         for user in expected_users_by_manifest[manifest_name].values():
             if user["username"] not in observed_connection_users:
-                api.create_user_connection(
+                database.create_user_connection(
                     username=user["username"],
                     conn_id=conn_id
                 )
 
         for observed_user in observed_connection_users.values():
-            if (observed_user["username"] not in expected_users_by_manifest[manifest_name]) and (observed_user["username"] != api.username):
-                api.delete_user_connection(
+            if (observed_user["username"] not in expected_users_by_manifest[manifest_name]) and (observed_user["username"] != database.username):
+                database.delete_user_connection(
                     username=observed_user["username"],
                     conn_id=conn_id
                 )
@@ -55,4 +55,4 @@ def sync_connections(
     # Cull connections
     for observed_connection in observed_connections.values():
         if observed_connection["identifier"] not in expected_connections:
-            api.delete_connection(conn_id=observed_connection["identifier"])
+            database.delete_connection(conn_id=observed_connection["identifier"])
