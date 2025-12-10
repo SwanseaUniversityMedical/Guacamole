@@ -4,6 +4,10 @@ kind: Ingress
 metadata:
   name: {{ include "guacamole.fullname" . }}-web
 
+  {{ with .Values.ingress.annotations }}
+  annotations:
+    {{ toYaml . | nindent 4 }}
+  {{ end }}
   labels:
     app: {{ include "guacamole.labels.app" . }}
     component: web

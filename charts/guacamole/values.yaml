@@ -153,6 +153,8 @@ ingress:
   # Only enabled when web.enable is also true
   enabled: false
 
+  annotations:
+
   host:
   path:
 
