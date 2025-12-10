@@ -11,7 +11,13 @@ RUN apk update && \
     pip uninstall --break-system-packages -y pyclean && \
     rm -rf /var/cache/apk/*
 
+RUN adduser -D -u 1001 -g 1001 controller
+
 COPY src/ /opt/
+
+# Run as the non-root user
+USER 1001
 
 ENTRYPOINT ["python3", "/opt/controller.py"]
 #CMD ["--help"]
+#ENV PATH "$PATH:/new/path"
