@@ -1,0 +1,20 @@
+dn: ou=people,dc=example,dc=org
+objectClass: top
+objectClass: organizationalUnit
+ou: people
+
+dn: uid=bob,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+cn: Bob
+sn: Bob
+uid: bob
+mail: bob@example.org
+userPassword: secret
+
+dn: uid=alice,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+cn: Alice
+sn: Alice
+uid: alice
+mail: alice@example.org
+userPassword: squirrel
