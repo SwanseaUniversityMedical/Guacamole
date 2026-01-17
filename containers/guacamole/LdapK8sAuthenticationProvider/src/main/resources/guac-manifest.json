@@ -1,0 +1,8 @@
+{
+  "guacamoleVersion": "1.5.0",
+  "name": "LDAP + Kubernetes Auth Provider",
+  "namespace": "guac-ldap-k8s",
+  "authProviders" : [
+        "org.apache.guacamole.auth.LdapK8sAuthenticationProvider"
+    ]
+}
