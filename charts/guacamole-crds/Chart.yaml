@@ -1,6 +1,0 @@
-apiVersion: v2
-appVersion: 0.0.0
-description: Guacamole CRDs for Kubernetes connection controller.
-name: guacamole-crds
-type: application
-version: 0.0.0
