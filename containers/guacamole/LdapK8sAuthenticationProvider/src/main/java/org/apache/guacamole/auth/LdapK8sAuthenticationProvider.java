@@ -16,9 +16,6 @@ import org.apache.guacamole.properties.StringGuacamoleProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.guacamole.auth.LDAP;
-import org.apache.guacamole.auth.K8s;
-
 public class LdapK8sAuthenticationProvider extends SimpleAuthenticationProvider {
 
     /** Logger for this class. */
@@ -37,9 +34,9 @@ public class LdapK8sAuthenticationProvider extends SimpleAuthenticationProvider 
     };
 
     /** Property for LDAP user bind DN pattern (e.g. "CN={username},OU=Users,DC=example,DC=com"). */
-    private static final GuacamoleProperty<String> LDAP_USER_BIND_PATTERN = new StringGuacamoleProperty() {
+    private static final GuacamoleProperty<String> LDAP_USER_FIELD = new StringGuacamoleProperty() {
         @Override
-        public String getName() { return "ldap-user-bind-pattern"; }
+        public String getName() { return "ldap-user-field"; }
     };
 
     /** Property for Kubernetes namespace containing GuacamoleConnection CRDs. */
@@ -59,11 +56,12 @@ public class LdapK8sAuthenticationProvider extends SimpleAuthenticationProvider 
             throws GuacamoleException {
 
         try {
+
             // Load LDAP configuration from guacamole.properties
             Environment environment = LocalEnvironment.getInstance();
             String ldapUrl = environment.getRequiredProperty(LDAP_URL).trim();
             String userBaseDN = environment.getRequiredProperty(LDAP_USER_BASE_DN).trim();
-            String bindPattern = environment.getRequiredProperty(LDAP_USER_BIND_PATTERN).trim();
+            String userField = environment.getRequiredProperty(LDAP_USER_FIELD).trim();
             String k8sNamespace = environment.getRequiredProperty(K8S_NAMESPACE).trim();
 
             // Retrieve user credentials
@@ -75,7 +73,7 @@ public class LdapK8sAuthenticationProvider extends SimpleAuthenticationProvider 
             }
 
             // Attempt to bind to LDAP using the users credentials
-            if (!LDAP.authenticate(ldapUrl, userBaseDN, bindPattern, username, password)) {
+            if (!LDAP.authenticate(ldapUrl, userBaseDN, userField, username, password)) {
                 return null;
             }
 

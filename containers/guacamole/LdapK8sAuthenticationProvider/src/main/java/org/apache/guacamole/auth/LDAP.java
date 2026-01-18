@@ -15,13 +15,13 @@ public class LDAP {
 
     private static final Logger logger = LoggerFactory.getLogger(LDAP.class);
 
-    public static boolean authenticate(String ldapUrl, String userBaseDN, String userBindField, String username, String password) {
+    public static boolean authenticate(String ldapHostname, String userBaseDN, String userField, String username, String password) {
 
         // Construct the user's DN using the base DN, bind pattern, and username
         String userDN;
         try {
             LdapName dn = new LdapName(userBaseDN);
-            dn.add(dn.size(), new Rdn(userBindField, username));
+            dn.add(dn.size(), new Rdn(userField, username));
             userDN = dn.toString();
             logger.debug("Attempting LDAP bind for user '{}' with DN '{}'", username, userDN);
 
@@ -33,7 +33,7 @@ public class LDAP {
         // Perform LDAP bind (authentication) with user credentials
         Hashtable<String, String> env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY, "com.sun.jndi.ldap.LdapCtxFactory");
-        env.put(Context.PROVIDER_URL, ldapUrl);
+        env.put(Context.PROVIDER_URL, ldapHostname);
         env.put(Context.SECURITY_AUTHENTICATION, "simple");
         env.put(Context.SECURITY_PRINCIPAL, userDN);
         env.put(Context.SECURITY_CREDENTIALS, password);

@@ -22,6 +22,8 @@ public class K8s {
         Map<String, GuacamoleConfiguration> configs =
                 new HashMap<String, GuacamoleConfiguration>();
 
+        logger.debug("Listing Connections in namespace '{}'", k8sNamespace);
+
         // Get a client for the Connection custom resource
         MixedOperation<Connection, KubernetesResourceList<Connection>, Resource<Connection>> connClient
                 = client.resources(Connection.class);
@@ -32,16 +34,29 @@ public class K8s {
 
             Connection.ConnectionSpec spec = conn.getSpec();
             Connection.ConnectionStatus status = conn.getStatus();
-            if (spec == null || status == null) continue;
 
-            if (!username.equals(spec.getUsername())) continue;
+            if (spec == null || status == null) {
+                continue;
+            }
 
-            if (!spec.isEnabled()) continue;
+            if (!username.equals(spec.getUsername())) {
+                continue;
+            }
+
+            if (!spec.isEnabled()) {
+                logger.debug("Skipping disabled Connection '{}' '{}'", username, conn.getFullResourceName());
+                continue;
+            }
 
             // Check if status.lastAuthorized is within the last 5 minutes
             long now = System.currentTimeMillis() / 1000;
             long threshold = now - (60 * 5);
-            if (status.getLastAuthorized() < threshold) continue;
+            if (status.getLastAuthorized() < threshold) {
+                logger.debug("Skipping stale Connection '{}' '{}'", username, conn.getFullResourceName());
+                continue;
+            }
+
+            logger.info("Found Connection '{}' '{}'", username, conn.getFullResourceName());
 
             // Add a Guacamole connection to the result
             GuacamoleConfiguration config = new GuacamoleConfiguration();
