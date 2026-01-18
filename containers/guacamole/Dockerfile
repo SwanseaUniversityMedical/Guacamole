@@ -1,4 +1,3 @@
-ARG GUAC_VERSION=1.5.0
 FROM maven:3.9-eclipse-temurin-17 AS build
 
 WORKDIR /build
@@ -12,7 +11,7 @@ RUN mvn -DskipTests package \
       -DoutputDirectory=target/dependency
 
 
-FROM guacamole/guacamole:${GUAC_VERSION}
+FROM guacamole/guacamole:1.6.0
 
 # The official image uses /etc/guacamole as GUACAMOLE_HOME by default
 # Extensions must go in: /etc/guacamole/extensions
