@@ -13,10 +13,20 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.fabric8.kubernetes.client.dsl.MixedOperation;
 import io.fabric8.kubernetes.client.dsl.Resource;
 
+/**
+ * Simple abstraction on communicating with the kube api.
+ */
 public class K8s {
 
     private static final Logger logger = LoggerFactory.getLogger(K8s.class);
 
+    /**
+     * Authorizes a user against Connection CRDs in the kube api.
+     * @param client Kubernetes client object initialized to the cluster.
+     * @param k8sNamespace Namespace to search for Connection CRDs.
+     * @param username Username to authorize.
+     * @return Map of Guacamole configurations.
+     */
     public static Map<String, GuacamoleConfiguration> authorize(KubernetesClient client, String k8sNamespace, String username) {
 
         Map<String, GuacamoleConfiguration> configs =

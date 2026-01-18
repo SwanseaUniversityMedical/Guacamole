@@ -11,10 +11,22 @@ import javax.naming.ldap.Rdn;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Simple abstraction on communicating with an LDAP server.
+ */
 public class LDAP {
 
     private static final Logger logger = LoggerFactory.getLogger(LDAP.class);
 
+    /**
+     * Authenticates a user against an LDAP server.
+     * @param ldapHostname Url to the LDAP server including protocol and port.
+     * @param userBaseDN User search base DN.
+     * @param userField User id field name.
+     * @param username Username to authenticate as.
+     * @param password Password to authenticate with.
+     * @return True if authentication succeeds, otherwise false.
+     */
     public static boolean authenticate(String ldapHostname, String userBaseDN, String userField, String username, String password) {
 
         // Construct the user's DN using the base DN, bind pattern, and username

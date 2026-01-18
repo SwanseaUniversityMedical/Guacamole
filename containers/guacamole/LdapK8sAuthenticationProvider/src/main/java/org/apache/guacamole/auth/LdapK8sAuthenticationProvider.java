@@ -16,30 +16,29 @@ import org.apache.guacamole.properties.StringGuacamoleProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Provides a custom authentication and authorization method which authenticates
+ * against LDAP and authorizes using kubernetes Connection CRDs.
+ */
 public class LdapK8sAuthenticationProvider extends SimpleAuthenticationProvider {
 
-    /** Logger for this class. */
     private static final Logger logger = LoggerFactory.getLogger(LdapK8sAuthenticationProvider.class);
 
-    /** Property for LDAP server URL (e.g. "ldap://host:389"). */
     private static final GuacamoleProperty<String> LDAP_URL = new StringGuacamoleProperty() {
         @Override
         public String getName() { return "ldap-url"; }
     };
 
-    /** Property for LDAP user search base DN (e.g. "OU=Users,DC=example,DC=com"). */
     private static final GuacamoleProperty<String> LDAP_USER_BASE_DN = new StringGuacamoleProperty() {
         @Override
         public String getName() { return "ldap-user-base-dn"; }
     };
 
-    /** Property for LDAP user bind DN pattern (e.g. "CN={username},OU=Users,DC=example,DC=com"). */
     private static final GuacamoleProperty<String> LDAP_USER_FIELD = new StringGuacamoleProperty() {
         @Override
         public String getName() { return "ldap-user-field"; }
     };
 
-    /** Property for Kubernetes namespace containing GuacamoleConnection CRDs. */
     private static final GuacamoleProperty<String> K8S_NAMESPACE = new StringGuacamoleProperty() {
         @Override
         public String getName() { return "k8s-namespace"; }
@@ -51,12 +50,18 @@ public class LdapK8sAuthenticationProvider extends SimpleAuthenticationProvider 
         return "ldapk8s";
     }
 
+    /**
+     * Overrides to provide a custom authentication and authorization method which authenticates
+     * against LDAP and authorizes using kubernetes Connection CRDs.
+     * @param credentials Credentials class passed from Guacamole.
+     * @return Map of authorized Guacamole configurations.
+     * @throws GuacamoleException Rethrows all exceptions as GuacamoleExecption's.
+     */
     @Override
     public Map<String, GuacamoleConfiguration> getAuthorizedConfigurations(Credentials credentials)
             throws GuacamoleException {
 
         try {
-
             // Load LDAP configuration from guacamole.properties
             Environment environment = LocalEnvironment.getInstance();
             String ldapUrl = environment.getRequiredProperty(LDAP_URL).trim();
@@ -77,6 +82,7 @@ public class LdapK8sAuthenticationProvider extends SimpleAuthenticationProvider 
                 return null;
             }
 
+            // Attempt to retrieve the users set of Connections from the kube api
             try (final KubernetesClient client = new KubernetesClientBuilder().build()) {
                 return K8s.authorize(client, k8sNamespace, username);
             }

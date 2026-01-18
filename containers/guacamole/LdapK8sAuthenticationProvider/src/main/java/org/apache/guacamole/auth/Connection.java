@@ -6,7 +6,9 @@ import io.fabric8.kubernetes.model.annotation.Group;
 import io.fabric8.kubernetes.model.annotation.Version;
 import io.fabric8.kubernetes.model.annotation.Plural;
 
-// Define the Connection Custom Resource (CRD) class
+/**
+ * Java digital twin of the Connection CRD.
+ */
 @Group("serp-lite.serp.uk")
 @Version("v1")
 @Plural("connections")
