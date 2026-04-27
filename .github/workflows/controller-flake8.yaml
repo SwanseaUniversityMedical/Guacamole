@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   controller-flake8:
-    uses: SwanseaUniversityMedical/workflows/.github/workflows/flake8.yaml@v1.0.2-flake8
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/flake8.yaml@v1.0.3-flake8-workflow
     with:
       config-file: '.github/.flake8'
       source-path: 'containers/controller/src'
