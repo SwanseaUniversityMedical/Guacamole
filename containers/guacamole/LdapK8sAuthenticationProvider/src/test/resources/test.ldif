@@ -1,0 +1,23 @@
+dn: dc=example,dc=org
+objectClass: top
+objectClass: domain
+dc: example
+
+dn: ou=people,dc=example,dc=org
+objectClass: top
+objectClass: organizationalUnit
+ou: people
+
+dn: uid=bob,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+cn: Bob Bobson
+sn: Bobson
+uid: bob
+userPassword: secret
+
+dn: uid=alice,ou=people,dc=example,dc=org
+objectClass: inetOrgPerson
+cn: Alice Alison
+sn: Alison
+uid: alice
+userPassword: squirrel

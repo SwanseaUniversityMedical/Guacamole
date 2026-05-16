@@ -1,0 +1,23 @@
+services:
+  guacamole:
+    depends_on:
+      - openldap
+    build:
+      context: ../containers/guacamole
+    container_name: guacamole
+    ports:
+      - "80:80"
+  openldap:
+    image: osixia/openldap:1.5.0
+    container_name: openldap
+    environment:
+      LDAP_ORGANISATION: "Example Inc"
+      LDAP_DOMAIN: "example.org"
+      LDAP_ADMIN_PASSWORD: "admin"
+      LDAP_BASE_DN: "dc=example,dc=org"
+      LDAP_REMOVE_CONFIG_AFTER_SETUP: "false"
+    ports:
+      - "389:389"
+    volumes:
+      - ./ldif:/container/service/slapd/assets/config/bootstrap/ldif/custom
+    restart: unless-stopped
