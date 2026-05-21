@@ -34,17 +34,16 @@ jobs:
   # Job name must be unique across repo to target
   # branch protection rules "required checks" properly!!
   controller-container:
-    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-container.yaml@v3.4.5-containers
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-container.yaml@v4.0.0-containers
     with:
       job-name: controller-container
       registry: ${{ vars.HARBOR_REGISTRY }}
       registry-user: ${{ vars.HARBOR_USER }}
       registry-repo: ${{ vars.HARBOR_PROJECT }}/controller
       release-tag-format: 'controller-container-${version}'
-      cosign-public-key: ${{ vars.COSIGN_PUBLIC_KEY }}
+      notation-cert: ${{ vars.NOTATION_CERT }}
       build-file: containers/controller/Dockerfile
       build-context: containers/controller
     secrets:
-      cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-      cosign-password: ${{ secrets.COSIGN_PASSWORD }}
+      notation-key: ${{ secrets.NOTATION_KEY }}
       registry-token: ${{ secrets.HARBOR_TOKEN }}

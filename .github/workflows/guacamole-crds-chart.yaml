@@ -33,7 +33,7 @@ jobs:
   # Job name must be unique across repo to target
   # branch protection rules "required checks" properly!
   guacamole-crds-chart:
-    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-chart.yaml@v3.1.7-charts
+    uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-chart.yaml@v4.0.0-charts
     with:
       job-name: guacamole-crds-chart
       registry: ${{ vars.HARBOR_REGISTRY }}
@@ -41,12 +41,11 @@ jobs:
       registry-project: ${{ vars.HARBOR_PROJECT }}
       registry-repo: guacamole-crds
       release-tag-format: 'guacamole-crds-chart-${version}'
-      cosign-public-key: ${{ vars.COSIGN_PUBLIC_KEY }}
+      notation-cert: ${{ vars.NOTATION_CERT }}
       chart: charts/guacamole-crds
       test-command: |
         helm template $CHART --debug
 
     secrets:
-      cosign-private-key: ${{ secrets.COSIGN_PRIVATE_KEY }}
-      cosign-password: ${{ secrets.COSIGN_PASSWORD }}
+      notation-key: ${{ secrets.NOTATION_KEY }}
       registry-token: ${{ secrets.HARBOR_TOKEN }}
