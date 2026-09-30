@@ -36,6 +36,8 @@ jobs:
     uses: SwanseaUniversityMedical/workflows/.github/workflows/pr-and-release-chart.yaml@v5.0.0-charts
     with:
       job-name: guacamole-chart
+      comment-pr: "true"
+      comment-release: "true"
       registry: ${{ vars.HARBOR_REGISTRY }}
       registry-user: ${{ vars.HARBOR_USER }}
       registry-project: ${{ vars.HARBOR_PROJECT }}
